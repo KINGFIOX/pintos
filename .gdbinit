@@ -2369,6 +2369,7 @@ set print pretty on
 set print array off
 set print array-indexes on
 set python print-stack full
+set architecture i386
 file src/threads/build/kernel.o
 source src/misc/gdb-macros
 debugpintos
