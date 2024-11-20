@@ -166,7 +166,7 @@ start:
 # Reload all the other segment registers and the stack pointer to
 # point into our new GDT.
 
-1:	mov $SEL_KDSEG, %ax
+1:	mov $SEL_KDSEG, %ax # 0x10
 	mov %ax, %ds
 	mov %ax, %es
 	mov %ax, %fs
