@@ -2,13 +2,10 @@
    The process must be terminated with -1 exit code. */
 
 #include <string.h>
+
 #include "tests/arc4.h"
 #include "tests/cksum.h"
 #include "tests/lib.h"
 #include "tests/main.h"
 
-void
-test_main (void)
-{
-  asm volatile ("movl -4096(%esp), %eax");
-}
+void test_main(void) { asm volatile("movl -4096(%esp), %eax"); }

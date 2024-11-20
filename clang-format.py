@@ -1,11 +1,10 @@
 import os
+from pathlib import Path
 
 c_extensions = (".c", ".h")
 
-directories = ["src/devices/", "src/examples/", "src/kernel/", "src/filesys/"]
+path = Path('src')
 
-for directory in directories:
-    for root, dirs, files in os.walk(directory):
-        for file in files:
-            if file.endswith(c_extensions):
-                os.system("clang-format -i -style=file " + root + "/" + file)
+for file in path.rglob('*'):
+    if file.is_file() and file.suffix in c_extensions:
+        os.system("clang-format -i -style=file " + str(file))
