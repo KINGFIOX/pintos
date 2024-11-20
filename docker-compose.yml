@@ -1,0 +1,10 @@
+services:
+  pintos:
+    image: pkuflyingpig/pintos
+    container_name: pintos
+    volumes:
+      - /home/wangfiox/Documents/pintos:/home/PKUOS/pintos
+    command: bash
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
