@@ -10,18 +10,20 @@ else
   GDB=gdb
 fi
 
+CGDB=gdb
+
 # Run GDB.
-if test -f "$GDBMACROS"; then
-  if command -v cgdb >/dev/null 2>&1; then
-    exec cgdb -d $GDB -x "$GDBMACROS" "$@"
+if test -f "$GDBMACROS"; then               # Check if the file exists
+  if command -v $CGDB >/dev/null 2>&1; then # Check if cgdb is installed
+    exec $CGDB -d $GDB -x "$GDBMACROS" "$@"
   else
     exec $GDB -x "$GDBMACROS" "$@"
   fi
 else
   echo "*** $GDBMACROS does not exist ***"
   echo "*** Pintos GDB macros will not be available ***"
-  if command -v cgdb >/dev/null 2>&1; then
-    exec cgdb -d $GDB "$@"
+  if command -v $CGDB >/dev/null 2>&1; then
+    exec $CGDB -d $GDB "$@"
   else
     exec $GDB "$@"
   fi
