@@ -6,6 +6,7 @@
 #include <limits.h>
 #include <random.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -94,7 +95,7 @@ int pintos_init(void) {
   printf("Pintos booting with %'" PRIu32 " kB RAM...\n", init_ram_pages * PGSIZE / 1024);
 
   /* Initialize memory system. */
-  palloc_init(user_page_limit);
+  palloc_init(user_page_limit);  // init the page allocator
   malloc_init();
   paging_init();
 
@@ -156,18 +157,16 @@ static void bss_init(void) {
    new page directory.  Points init_page_dir to the page
    directory it creates. */
 static void paging_init(void) {
-  uint32_t *pd, *pt;
-  size_t page;
-  extern char _start, _end_kernel_text;
+  extern char _start, _end_kernel_text;  // defined in kernel.lds.S
 
-  pd = init_page_dir = palloc_get_page(PAL_ASSERT | PAL_ZERO);
-  pt = NULL;
-  for (page = 0; page < init_ram_pages; page++) {
+  uint32_t *pd = init_page_dir /*global*/ = palloc_get_page(PAL_ASSERT | PAL_ZERO);
+  uint32_t *pt = NULL;
+  for (size_t page = 0; page < init_ram_pages; page++) {  // 物理内存挂在页表下
     uintptr_t paddr = page * PGSIZE;
     char *vaddr = ptov(paddr);
     size_t pde_idx = pd_no(vaddr);
     size_t pte_idx = pt_no(vaddr);
-    bool in_kernel_text = &_start <= vaddr && vaddr < &_end_kernel_text;
+    bool in_kernel_text = &_start <= vaddr && vaddr < &_end_kernel_text;  // if it is in .text
 
     if (pd[pde_idx] == 0) {
       pt = palloc_get_page(PAL_ASSERT | PAL_ZERO);

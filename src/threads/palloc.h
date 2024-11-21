@@ -5,7 +5,7 @@
 
 /** How to allocate pages. */
 enum palloc_flags {
-  PAL_ASSERT = 001, /**< Panic on failure. */
+  PAL_ASSERT = 001, /**< Panic on failure. palloc_assert (assert 表示, 必须得成功) */
   PAL_ZERO = 002,   /**< Zero page contents. */
   PAL_USER = 004    /**< User page. */
 };
