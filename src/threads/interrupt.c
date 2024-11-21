@@ -107,23 +107,25 @@ enum intr_level intr_disable(void) {
 
 /** Initializes the interrupt system. */
 void intr_init(void) {
-  uint64_t idtr_operand;
-  int i;
-
   /* Initialize interrupt controller. */
   pic_init();
 
   /* Initialize IDT. */
-  for (i = 0; i < INTR_CNT; i++) idt[i] = make_intr_gate(intr_stubs[i], 0);
+  for (int i = 0; i < INTR_CNT; i++) {
+    idt[i] = make_intr_gate(intr_stubs[i], 0);
+  }
 
   /* Load IDT register.
      See [IA32-v2a] "LIDT" and [IA32-v3a] 5.10 "Interrupt
      Descriptor Table (IDT)". */
-  idtr_operand = make_idtr_operand(sizeof idt - 1, idt);
+  uint64_t idtr_operand = make_idtr_operand(sizeof idt - 1, idt);
   asm volatile("lidt %0" : : "m"(idtr_operand));
 
   /* Initialize intr_names. */
-  for (i = 0; i < INTR_CNT; i++) intr_names[i] = "unknown";
+  for (int i = 0; i < INTR_CNT; i++) {
+    intr_names[i] = "unknown";
+  }
+
   intr_names[0] = "#DE Divide Error";
   intr_names[1] = "#DB Debug Exception";
   intr_names[2] = "NMI Interrupt";
@@ -198,7 +200,7 @@ void intr_yield_on_return(void) {
   yield_on_return = true;
 }
 
-/** 8259A Programmable Interrupt Controller. */
+/** 8259A Programmable Interrupt Controller.(PIC) */
 
 /** Initializes the PICs.  Refer to [8259A] for details.
 

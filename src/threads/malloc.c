@@ -60,19 +60,17 @@ struct block {
 };
 
 /** Our set of descriptors. */
-static struct desc descs[10]; /**< Descriptors. */
-static size_t desc_cnt;       /**< Number of descriptors. */
+static struct desc descs[10]; /**< Descriptors. */  // descriptors, 每个元素都对应一个 block_size, 用于管理对应大小的 block
+static size_t desc_cnt;                             /**< Number of descriptors. */
 
 static struct arena *block_to_arena(struct block *);
 static struct block *arena_to_block(struct arena *, size_t idx);
 
 /** Initializes the malloc() descriptors. */
 void malloc_init(void) {
-  size_t block_size;
-
-  for (block_size = 16; block_size < PGSIZE / 2; block_size *= 2) {
-    struct desc *d = &descs[desc_cnt++];
-    ASSERT(desc_cnt <= sizeof descs / sizeof *descs);
+  for (size_t block_size = 16; block_size < PGSIZE / 2; block_size *= 2) {
+    struct desc *d = &descs[desc_cnt++];  // get the slot of the descriptors array
+    ASSERT(desc_cnt <= sizeof(descs) / sizeof(*descs));
     d->block_size = block_size;
     d->blocks_per_arena = (PGSIZE - sizeof(struct arena)) / block_size;
     list_init(&d->free_list);

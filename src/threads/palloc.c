@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "kernel/bitmap.h"
 #include "threads/loader.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
@@ -45,12 +46,11 @@ static bool page_from_pool(const struct pool *, void *page);
 void palloc_init(size_t user_page_limit) {
   /* Free memory starts at 1 MB and runs to the end of RAM. */
   uint8_t *free_start = ptov(1024 * 1024);
-  uint8_t *free_end = ptov(init_ram_pages * PGSIZE);
+  uint8_t *free_end = ptov(init_ram_pages * PGSIZE);  // init_ram_pages defined in start.S
   size_t free_pages = (free_end - free_start) / PGSIZE;
   size_t user_pages = free_pages / 2;
-  size_t kernel_pages;
-  if (user_pages > user_page_limit) user_pages = user_page_limit;
-  kernel_pages = free_pages - user_pages;
+  if (user_pages > user_page_limit) user_pages = user_page_limit;  // user_pages = min(user_pages, user_page_limit)
+  size_t kernel_pages = free_pages - user_pages;
 
   /* Give half of memory to kernel, half to user. */
   init_pool(&kernel_pool, free_start, kernel_pages, "kernel pool");
@@ -64,16 +64,16 @@ void palloc_init(size_t user_page_limit) {
    available, returns a null pointer, unless PAL_ASSERT is set in
    FLAGS, in which case the kernel panics. */
 void *palloc_get_multiple(enum palloc_flags flags, size_t page_cnt) {
-  struct pool *pool = flags & PAL_USER ? &user_pool : &kernel_pool;
-  void *pages;
-  size_t page_idx;
+  struct pool *pool = flags & PAL_USER ? &user_pool : &kernel_pool;  // 对应的 pool
 
   if (page_cnt == 0) return NULL;
 
+  size_t page_idx;
   lock_acquire(&pool->lock);
   page_idx = bitmap_scan_and_flip(pool->used_map, 0, page_cnt, false);
   lock_release(&pool->lock);
 
+  void *pages;
   if (page_idx != BITMAP_ERROR)
     pages = pool->base + PGSIZE * page_idx;
   else
@@ -139,7 +139,7 @@ static void init_pool(struct pool *p, void *base, size_t page_cnt, const char *n
 
   /* Initialize the pool. */
   lock_init(&p->lock);
-  p->used_map = bitmap_create_in_buf(page_cnt, base, bm_pages * PGSIZE);
+  p->used_map = bitmap_create_in_buf(page_cnt, base, bm_pages * PGSIZE);  // build the bitmap
   p->base = base + bm_pages * PGSIZE;
 }
 
