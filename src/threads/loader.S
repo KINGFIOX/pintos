@@ -21,7 +21,7 @@
 # Set stack to grow downward from 60 kB (after boot, the kernel
 # continues to use this stack for its initial thread).
 
-	sub %ax, %ax
+	sub %ax, %ax # 0
 	mov %ax, %ds
 	mov %ax, %ss
 	mov $0xf000, %esp
@@ -49,8 +49,8 @@
 
 	mov $0x80, %dl			# Hard disk 0.
 read_mbr:
-	sub %ebx, %ebx			# Sector 0.
-	mov $0x2000, %ax		# Use 0x20000 for buffer.
+	sub %ebx, %ebx			# Sector 0. $ebx = 0
+	mov $0x2000, %ax		# Use 0x2000_0 for buffer.
 	mov %ax, %es
 	call read_sector
 	jc no_such_drive
@@ -160,11 +160,12 @@ next_sector:
 #### bytes in the loader, we reuse 4 bytes of the loader's code for
 #### this temporary pointer.
 
-	mov $0x2000, %ax
+	mov $0x2000, %ax # 我们就是把 kernel 放在 0x2000:0x0000 的地方
 	mov %ax, %es
-	mov %es:0x18, %dx
+	mov %es:0x18, %dx # 0x18 是 ELF header 的 entry point, 这个就是 kernel 的入口地址. 也就是 0xc002_0058
 	mov %dx, start
 	movw $0x2000, start + 2
+	# 58 00 00 20 -> 2000:0058 -> 0x2_0058
 	ljmp *start
 
 read_failed:
@@ -182,17 +183,18 @@ start:
 #### just after the terminating null.  This subroutine preserves all
 #### general-purpose registers.
 
-puts:	xchg %si, %ss:(%esp)
+puts:
+	xchg %si, %ss:(%esp) # call 的时候, 会 push ra, 这个时候栈顶就是 ra.
 	push %ax
 next_char:
-	mov %cs:(%si), %al
+	mov %cs:(%si), %al # get a char into %al
 	inc %si
 	test %al, %al
-	jz 1f
+	jz 1f # %al == '\0'
 	call putc
 	jmp next_char
 1:	pop %ax
-	xchg %si, %ss:(%esp)
+	xchg %si, %ss:(%esp) # 消费完字符串以后, 将 si 放回栈中, 这里 si 指向的就是下一个指令
 	ret
 
 #### Character output subroutine.  Prints the character in AL to the
@@ -202,9 +204,10 @@ next_char:
 #### If called upon to output a carriage return, this subroutine
 #### automatically supplies the following line feed.
 
-putc:	pusha
+putc:	
+	pusha # push all general-purpose registers
 
-1:	sub %bh, %bh			# Page 0.
+1:	sub %bh, %bh			# Page 0. %bh = 0
 	mov $0x0e, %ah			# Teletype output service.
 	int $0x10
 
@@ -213,11 +216,13 @@ putc:	pusha
 2:	int $0x14			# Destroys AH.
 	test $0x80, %ah			# Output timed out?
 	jz 3f
-	movw $0x9090, 2b		# Turn "int $0x14" above into NOPs.
+	movw $0x9090, 2b		# Turn "int $0x14" above into NOPs.(at label 2)
+							# 可能是串口坏了, 为了防止这个坏了的串口导致代码被阻塞,
+							# 于是这里将串口输出替换成 nop, 后续无视坏了的串口, 执行后续流程
 
 3:
-	cmp $'\r', %al
-	jne popa_ret
+	cmp $'\r', %al # 回车
+	jne popa_ret # popa ret
 	mov $'\n', %al
 	jmp 1b
 
@@ -230,17 +235,18 @@ putc:	pusha
 read_sector:
 	pusha
 	sub %ax, %ax
-	push %ax			# LBA sector number [48:63]
+	push %ax			# LBA sector number [48:63], LBA(logic block address, 逻辑块寻址)
 	push %ax			# LBA sector number [32:47]
 	push %ebx			# LBA sector number [0:31]
 	push %es			# Buffer segment
 	push %ax			# Buffer offset (always 0)
 	push $1				# Number of sectors to read
-	push $16			# Packet size
-	mov $0x42, %ah			# Extended read
-	mov %sp, %si			# DS:SI -> packet
-	int $0x13			# Error code in CF
+	push $16			# Packet size. 数据包大小, 这个是 bios 的要求. 上面就是构建数据包的过程(push), 一共是 16 Byte
+	mov $0x42, %ah			# Extended read. 表示: 使用 BIOS 扩展读功能
+	mov %sp, %si			# DS:SI -> packet. si 要指向构建好的 packet
+	int $0x13			# Error code in CF. 触发 disk 中断. error code 在 CF 中
 	popa				# Pop 16 bytes, preserve flags
+
 popa_ret:
 	popa
 	ret				# Error code still in CF

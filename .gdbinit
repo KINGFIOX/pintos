@@ -2372,7 +2372,7 @@ set python print-stack full
 set architecture i386
 file src/threads/build/kernel.o
 source src/misc/gdb-macros
-debugpintos
+# debugpintos
 
 
 # Start ------------------------------------------------------------------------
