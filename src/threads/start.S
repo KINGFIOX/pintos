@@ -179,7 +179,7 @@ start:
 
 	call pintos_init
 
-# pintos_init() shouldn't ever return.  If it does, spin.
+# pintos_init() shouldn't ever return.  If it does, spin. (防止跑飞, 神秘重启)
 
 1:	jmp 1b
 .endfunc
