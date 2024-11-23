@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "kernel/list.h"
 #include "threads/flags.h"
 #include "threads/interrupt.h"
 #include "threads/intr-stubs.h"
@@ -488,8 +489,8 @@ static void schedule(void) {
 /** Returns a tid to use for a new thread. */
 static tid_t allocate_tid(void) {
   static tid_t next_tid = 1;
-  tid_t tid;
 
+  tid_t tid;
   lock_acquire(&tid_lock);
   tid = next_tid++;
   lock_release(&tid_lock);

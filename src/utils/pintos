@@ -20,13 +20,15 @@ BEGIN {
 # $ (标量)
 # @ (数组)
 # % (hash表)
+# $< == getuid()
+# $) == getgid()
 
 # Command-line options.
 our ($start_time) = time();
 our ($sim);                            # Simulator: bochs, qemu, or player.
 our ($debug)   = "none";               # Debugger: none, monitor, or gdb.
 our ($gdbport) = 1234;                 # GDB connection port. Default 1234.
-our ($uidport) = $< % 5000 + 25000;    # GDB port based on user id
+our ($uidport) = $< % 5000 + 25000;    # GDB port based on user id.
 our ($mem)     = 4;                    # Physical RAM in MB.
 our ($serial)  = 1;                    # Use serial port for input and output?
 our ($vga);                # VGA output: window, terminal, or none.
@@ -57,26 +59,41 @@ finish_scratch_disk();
 exit 0;
 
 # Parses the command line.
+# pintos [OPTIONS] -- [KERNEL_ARGS]
 sub parse_command_line {
+
+    # @ARGS == 0 没有输入
+    # @ARGV == 1 判断长度
+    # $ARGV[0] eq '--help' 判断内容
+    # if 成立, 调用 usage(0)
     usage(0) if @ARGV == 0 || ( @ARGV == 1 && $ARGV[0] eq '--help' );
 
-    @kernel_args = @ARGV;
+    @kernel_args = @ARGV;    # 复制命令行参数
+
+    # 检查是否有 -- 分隔符. '--' 通常用作: 选项参数与位置参数的分隔符.
+    # 选项参数: --<long>=<value> ; -<shot>=<value>
+    # 位置参数: 根据他们在命令行中的位置来识别和解析的参数 argv[1], argv[2] ...
     if ( grep ( $_ eq '--', @kernel_args ) ) {
         @ARGV = ();
+
+# while ( my $arg = @kernel_args.pop() != '--' ) { @ARGV.push($arg) }, 把 -- 之前的, 全部都 push 到 @ARGV 中
         while ( ( my $arg = shift(@kernel_args) ) ne '--' ) {
             push( @ARGV, $arg );
         }
     }
     else {
+        # 如果没有 '--', 所有参数都视为选项参数
         @kernel_args = ();
     }
+
+    # GetOptions would use @ARGV
     GetOptions(
-        "sim=s"  => sub { set_sim( $_[1] ) },
-        "bochs"  => sub { set_sim("bochs") },
-        "qemu"   => sub { set_sim("qemu") },
+        "sim=s"  => sub { set_sim( $_[1] ) },    # $_[0] is "sim", $_[1]=<value>
+        "bochs"  => sub { set_sim("bochs") },    # --bochs
+        "qemu"   => sub { set_sim("qemu") },     # --qemu
         "player" => sub { set_sim("player") },
 
-        "debug=s"    => sub { set_debug( $_[1] ) },
+        "debug=s"    => sub { set_debug( $_[1] ) },     #
         "no-debug"   => sub { set_debug("none") },
         "monitor"    => sub { set_debug("monitor") },
         "gdb"        => sub { set_debug("gdb") },
@@ -84,11 +101,12 @@ sub parse_command_line {
         "gdb-port=i" => \$gdbport,
 
         "m|memory=i" => \$mem,
+
         "j|jitter=i" => sub { set_jitter( $_[1] ) },
         "r|realtime" => sub { set_realtime() },
 
         "T|timeout=i"       => \$timeout,
-        "k|kill-on-failure" => \$kill_on_failure,
+        "k|kill-on-failure" => \$kill_on_failure,    # '\' 表示对变量的引用
 
         "v|no-vga"    => sub { set_vga('none'); },
         "s|no-serial" => sub { $serial = 0; },
@@ -98,9 +116,9 @@ sub parse_command_line {
         "g|get-file=s" => sub { add_file( \@gets, $_[1] ); },
         "a|as=s"       => sub { set_as( $_[1] ); },
 
-        "h|help" => sub { usage(0); },
+        "h|help" => sub { usage(0); },               # -h, --help
 
-        "kernel=s"  => \&set_part,
+        "kernel=s"  => \&set_part,                   # \& 表示对函数的引用. 传函数就可以: lazy
         "filesys=s" => \&set_part,
         "swap=s"    => \&set_part,
 
@@ -141,7 +159,7 @@ sub parse_command_line {
 # usage($exitcode).
 # Prints a usage message and exits with $exitcode.
 sub usage {
-    my ($exitcode) = @_;
+    my ($exitcode) = @_;    # 接受传入的参数
     $exitcode = 1 unless defined $exitcode;
     print <<'EOF';
 pintos, a utility for running Pintos in a simulator
@@ -201,8 +219,8 @@ EOF
 
 # Sets the simulator.
 sub set_sim {
-    my ($new_sim) = @_;
-    die "--$new_sim conflicts with --$sim\n"
+    my ($new_sim) = @_;                         # get the first arg
+    die "--$new_sim conflicts with --$sim\n"    # die 提供了明确的错误信息
       if defined($sim) && $sim ne $new_sim;
     $sim = $new_sim;
 }
@@ -227,8 +245,9 @@ sub set_vga {
 # Sets randomized timer interrupts.
 sub set_jitter {
     my ($new_jitter) = @_;
-    die "--realtime conflicts with --jitter\n" if defined $realtime;
-    die "different --jitter already defined\n"
+    die "--realtime conflicts with --jitter\n"
+      if defined $realtime;    # --jitter=1 --realtime (互斥的)
+    die "different --jitter already defined\n"    # --jitter=1 --jitter=2
       if defined $jitter && $jitter != $new_jitter;
     $jitter = $new_jitter;
 }
