@@ -20,7 +20,7 @@
 
 .func start
 .globl start
-start:
+start: # [2000:  58]
 
 # The loader called into us with CS = 0x2000, SS = 0x0000, ESP = 0xf000,
 # but we should initialize the other segment registers.
@@ -86,7 +86,7 @@ start:
 	mov $0xf00, %ax
 	mov %ax, %es
 	subl %eax, %eax # 0
-	subl %edi, %edi
+	subl %edi, %edi 
 	movl $0x400, %ecx # 1024 entries (4KB/4B)
 	rep stosl # store %eax into [%es:%edi], then add $0x4 to %edi, repeat %ecx times
 
@@ -111,11 +111,14 @@ start:
 
 # 0x10007 -> [0001 0000] 000_0 0_0_0_0 0_1_1_1
 
+# 0x200b1:
 	movl $0x10007, %eax
 	movl $0x11, %ecx # times for loop
 	subl %edi, %edi # 0
-1:	movl %eax, %es:(%di) # fill the PDE in page directory
-	movl %eax, %es:LOADER_PHYS_BASE >> 20(%di) # LOADER_PHYS_BASE = 0xc000_0000
+1: # 0x200c0
+	# directory ( 0 ~ 0x11, 0xc00 ~ 0xc11 ) (virtual) -> ( 0x010007 ~ 0x120007 ) (physical)
+	movl %eax, %es:(%di) # fill the PDE in page directory. 0xf00:(%di) = 0xf000 + %di
+	movl %eax, %es:LOADER_PHYS_BASE >> 20(%di) # LOADER_PHYS_BASE = 0xc000_0000. 0xf00:0xc00(%di) = 0xfc00 + %di
 	addw $4, %di
 	addl $0x1000, %eax # + 4KB
 	loop 1b
@@ -137,19 +140,21 @@ start:
 # read/write											[1]
 # present												[0]
 
-# 0x1000 
+# 0x200d5
 	movw $0x1000, %ax
 	movw %ax, %es
 	movl $0x7, %eax
 	movl $0x4000, %ecx # fill (4 * 4k / 4) / 1024 = 4 directory entries
-	subl %edi, %edi
-1:	movl %eax, %es:(%di)
+	subl %edi, %edi 
+1: # 0x200e9
+	movl %eax, %es:(%di)
 	addw $4, %di
 	addl $0x1000, %eax
 	loop 1b
 
 # Set page directory base register.
 
+# 0x200f8
 	movl $0xf000, %eax
 	movl %eax, %cr3
 
@@ -158,6 +163,7 @@ start:
 # First, disable interrupts.  We won't set up the IDT until we get
 # into C code, so any interrupt would blow us away.
 
+# 0x20101:
 	cli
 
 # Protected mode requires a GDT, so point the GDTR to our GDT.
@@ -166,6 +172,14 @@ start:
 # The CPU doesn't need an addr32 prefix but ELF doesn't do 16-bit
 # relocations.
 
+# gdtdesc 在下面定义的
+# LOADER_PHYS_BASE = 0xc0000000
+# 0x20000 是 kernel(elf) 被装载到的地址
+# c0020158 <gdtdesc>:
+# c0020158 : 17 00
+# c002015a : 40 01 02 c0 
+# 这个 gdtdesc - LOADER_PHYS_BASE - 0x20000 应该是虚拟地址了. 请看上面页表的建立
+# 0x20102:
 	data32 addr32 lgdt gdtdesc - LOADER_PHYS_BASE - 0x20000
 
 # Then we turn on the following bits in CR0:
@@ -176,6 +190,7 @@ start:
 #    EM (Emulation): forces floating-point instructions to trap.
 #       We don't support floating point.
 
+# 0x2010b:
 	movl %cr0, %eax
 	orl $CR0_PE | CR0_PG | CR0_WP | CR0_EM, %eax
 	movl %eax, %cr0
@@ -186,6 +201,12 @@ start:
 # Because we're not running in a 32-bit segment the data32 prefix is
 # needed to jump to a 32-bit offset in the target segment.
 
+# ljmp $0x8,$0xc002011f
+# sel_kcseg (selector kernel code segment)
+# 看下面的 gdtdesc
+# 0x8(gdtdesc) : .quad 0x00cf9a000000ffff	# System code, base 0, limit 4 GB.
+# 注意, 这里的 $1f, 不是 $0x1f, 而表示的是: 下面的 label 1 的最低值, 这里的 f 表示 forward
+# 0x20117:
 	data32 ljmp $SEL_KCSEG, $1f
 
 # We're now in protected mode in a 32-bit segment.
@@ -196,7 +217,8 @@ start:
 # Reload all the other segment registers and the stack pointer to
 # point into our new GDT.
 
-1:	mov $SEL_KDSEG, %ax # 0x10
+1: # 0xc002011f
+	mov $SEL_KDSEG, %ax # 0x10
 	mov %ax, %ds
 	mov %ax, %es
 	mov %ax, %fs
