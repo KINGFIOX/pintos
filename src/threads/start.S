@@ -224,7 +224,7 @@ start: # [2000:  58]
 	mov %ax, %fs
 	mov %ax, %gs
 	mov %ax, %ss
-	addl $LOADER_PHYS_BASE, %esp
+	addl $LOADER_PHYS_BASE, %esp # 向下增长的栈
 	movl $0, %ebp			# Null-terminate main()'s backtrace
 
 #### Call pintos_init().

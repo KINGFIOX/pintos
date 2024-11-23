@@ -108,7 +108,19 @@ intr_stubs:
 
 /* Emits a stub for interrupt vector NUMBER.
    TYPE is `zero', for the case where we push a 0 error code,
-   or `REAL', if the CPU pushes an error code for us. */
+   or `REAL', if the CPU pushes an error code for us.*/
+/* such as
+        * .text
+        * .func intr00_stub
+        * intr00_stub:
+        *       pushl (%esp); // REAL expands here
+        *       movl %ebp, 4(%esp);
+        *       push $0x00;
+        *       jmp intr_entry;
+        * .endfunc
+        * .data
+        * .long intr00_stub;
+        */
 #define STUB(NUMBER, TYPE)                      \
 	.text;                                  \
 .func intr##NUMBER##_stub;			\

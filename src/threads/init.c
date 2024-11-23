@@ -298,18 +298,22 @@ static void run_actions(char **argv) {
 
   while (*argv != NULL) {
     const struct action *a;
-    int i;
 
     /* Find action name. */
-    for (a = actions;; a++)
-      if (a->name == NULL)
+    for (a = actions; /*dead loop*/; a++) {
+      if (a->name == NULL) {
         PANIC("unknown action `%s' (use -h for help)", *argv);
-      else if (!strcmp(*argv, a->name))
+      } else if (!strcmp(*argv, a->name)) {
         break;
+      }
+    }
 
     /* Check for required arguments. */
-    for (i = 1; i < a->argc; i++)
-      if (argv[i] == NULL) PANIC("action `%s' requires %d argument(s)", *argv, a->argc - 1);
+    for (int i = 1; i < a->argc; i++) {
+      if (argv[i] == NULL) {
+        PANIC("action `%s' requires %d argument(s)", *argv, a->argc - 1);
+      }
+    }
 
     /* Invoke action and advance. */
     a->function(argv);
