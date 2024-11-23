@@ -47,6 +47,7 @@
 #### scanned, e.g. hda1234 as we scan four partitions on the first
 #### hard disk.
 
+	# %dl is set to 0x80, which corresponds to the first hard drive in BIOS interrupt calls.
 	mov $0x80, %dl			# Hard disk 0.
 read_mbr:
 	sub %ebx, %ebx			# Sector 0. $ebx = 0
@@ -65,32 +66,36 @@ read_mbr:
 	# Check for MBR signature--if not present, it's not a
 	# partitioned hard disk.
 	cmpw $0xaa55, %es:510
-	jne next_drive
+	jne next_drive # signature 不对, 说明这个不是一个 MBR, 那么着下一个硬盘 (hard drive, 驱动器, 很古老的名词). 硬盘必须是连续存放的, 不能中间有空的
 
+	# $446 : the starting offset of the first partition table entry in the MBR.
 	mov $446, %si			# Offset of partition table entry 1.
-	mov $'1', %al
+	mov $'1', %al			# ascii number of partition
 check_partition: # 0x7c47
 	# Is it an unused partition?
 	cmpl $0, %es:(%si)
-	je next_partition
+	je next_partition # jmp if it is an unused partition
 
-	# Print [1-4].
-	call putc
+	# Print [1-4].(%al, ascii number of partition)
+	call putc # put the '1' that is set in %al above
 
 	# Is it a Pintos kernel partition?
+	# Compares the partition type byte at offset 4 in the partition entry to 0x20, which is designated for a Pintos kernel partition.
 	cmpb $0x20, %es:4(%si)
 	jne next_partition
 
 	# Is it a bootable partition?
+	# Checks if the boot flag at offset 0 is 0x80, indicating a bootable partition.
 	cmpb $0x80, %es:(%si)
 	je load_kernel
 
 next_partition:
 	# No match for this partition, go on to the next one.
+	# bytes of a partition table entry is 16
 	add $16, %si			# Offset to next partition table entry.
-	inc %al
-	cmp $510, %si
-	jb check_partition
+	inc %al					# '2', '3', '4' ...
+	cmp $510, %si			# 说明 bootable 的分区只能是前 4 个.
+	jb check_partition # jmp below
 
 next_drive:
 	# No match on this drive, go on to the next one.
@@ -104,6 +109,7 @@ no_boot_partition:
 	.string "\rNot found\r"
 
 	# Notify BIOS that boot failed.  See [IntrList].
+	# see wiki: https://en.wikipedia.org/wiki/BIOS_interrupt_call
 	int $0x18
 
 #### We found a kernel.  The kernel's drive is in DL.  The partition
@@ -233,18 +239,18 @@ putc:
 #### carry set on error, clear otherwise.  Preserves all
 #### general-purpose registers.
 
-read_sector:
+read_sector: # 0x7d1f
 	pusha
 	sub %ax, %ax
 	push %ax			# LBA sector number [48:63], LBA(logic block address, 逻辑块寻址)
 	push %ax			# LBA sector number [32:47]
 	push %ebx			# LBA sector number [0:31]
-	push %es			# Buffer segment
+	push %es			# Buffer segment. %es = 0x2000
 	push %ax			# Buffer offset (always 0)
 	push $1				# Number of sectors to read
 	push $16			# Packet size. 数据包大小, 这个是 bios 的要求. 上面就是构建数据包的过程(push), 一共是 16 Byte
 	mov $0x42, %ah			# Extended read. 表示: 使用 BIOS 扩展读功能
-	mov %sp, %si			# DS:SI -> packet. si 要指向构建好的 packet
+	mov %sp, %si			# DS:SI -> packet. si 要指向构建好的 packet. 因为是在栈中构建的.
 	int $0x13			# Error code in CF. 触发 disk 中断. error code 在 CF 中
 	popa				# Pop 16 bytes, preserve flags
 

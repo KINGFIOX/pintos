@@ -107,18 +107,20 @@ enum intr_level intr_disable(void) {
 
 /** Initializes the interrupt system. */
 void intr_init(void) {
-  /* Initialize interrupt controller. */
+  /* Initialize interrupt controller. (programmable interrupt controller) */
   pic_init();
 
   /* Initialize IDT. */
   for (int i = 0; i < INTR_CNT; i++) {
+    // intr_stubs defined in intr-stubs.S
+    // stub : 存根, 树桩
     idt[i] = make_intr_gate(intr_stubs[i], 0);
   }
 
   /* Load IDT register.
      See [IA32-v2a] "LIDT" and [IA32-v3a] 5.10 "Interrupt
      Descriptor Table (IDT)". */
-  uint64_t idtr_operand = make_idtr_operand(sizeof idt - 1, idt);
+  uint64_t idtr_operand = make_idtr_operand(sizeof(idt) - 1, idt);
   asm volatile("lidt %0" : : "m"(idtr_operand));
 
   /* Initialize intr_names. */
@@ -153,10 +155,11 @@ void intr_init(void) {
    interrupt status set to LEVEL. */
 static void register_handler(uint8_t vec_no, int dpl, enum intr_level level, intr_handler_func *handler, const char *name) {
   ASSERT(intr_handlers[vec_no] == NULL);
-  if (level == INTR_ON)
+  if (level == INTR_ON) {
     idt[vec_no] = make_trap_gate(intr_stubs[vec_no], dpl);
-  else
+  } else {
     idt[vec_no] = make_intr_gate(intr_stubs[vec_no], dpl);
+  }
   intr_handlers[vec_no] = handler;
   intr_names[vec_no] = name;
 }
@@ -241,7 +244,9 @@ static void pic_end_of_interrupt(int irq) {
   outb(0x20, 0x20);
 
   /* Acknowledge slave PIC if this is a slave interrupt. */
-  if (irq >= 0x28) outb(0xa0, 0x20);
+  if (irq >= 0x28) {
+    outb(0xa0, 0x20);
+  }
 }
 
 /** Creates an gate that invokes FUNCTION.
@@ -261,26 +266,24 @@ static void pic_end_of_interrupt(int irq) {
    [IA32-v3a] section 5.12.1.2 "Flag Usage By Exception- or
    Interrupt-Handler Procedure" for discussion. */
 static uint64_t make_gate(void (*function)(void), int dpl, int type) {
-  uint32_t e0, e1;
-
   ASSERT(function != NULL);
   ASSERT(dpl >= 0 && dpl <= 3);
   ASSERT(type >= 0 && type <= 15);
 
-  e0 = (((uint32_t)function & 0xffff) /**< Offset 15:0. */
-        | (SEL_KCSEG << 16));         /**< Target code segment. */
+  uint32_t e0 = (((uint32_t)function & 0xffff) /**< Offset 15:0. */
+                 | (SEL_KCSEG << 16));         /**< Target code segment. */
 
-  e1 = (((uint32_t)function & 0xffff0000) /**< Offset 31:16. */
-        | (1 << 15)                       /**< Present. */
-        | ((uint32_t)dpl << 13)           /**< Descriptor privilege level. */
-        | (0 << 12)                       /**< System. */
-        | ((uint32_t)type << 8));         /**< Gate type. */
+  uint32_t e1 = (((uint32_t)function & 0xffff0000) /**< Offset 31:16. */
+                 | (1 << 15)                       /**< Present. */
+                 | ((uint32_t)dpl << 13)           /**< Descriptor privilege level. */
+                 | (0 << 12)                       /**< System. */
+                 | ((uint32_t)type << 8));         /**< Gate type. */
 
   return e0 | ((uint64_t)e1 << 32);
 }
 
 /** Creates an interrupt gate that invokes FUNCTION with the given
-   DPL. */
+   DPL. (defined privilege level) */
 static uint64_t make_intr_gate(void (*function)(void), int dpl) { return make_gate(function, dpl, 14); }
 
 /** Creates a trap gate that invokes FUNCTION with the given
