@@ -48,8 +48,8 @@ sub set_part {
     my ( $opt,  $arg )    = @_;
     my ( $role, $source ) = $opt =~ /^([a-z]+)(?:-([a-z]+))?/ or die;
 
-    $role   = uc $role;
-    $source = 'file' if !defined $source || $source eq '';
+    $role   = uc $role;                                       # up case
+    $source = 'file' if !defined $source || $source eq '';    #
 
     die "can't have two sources for \L$role\E partition"
       if exists $parts{$role};
@@ -67,12 +67,12 @@ sub do_set_part {
 
     my ($p) = $parts{$role} = {};
     if ( $source eq 'file' ) {
-        if ( read_mbr($arg) ) {
+        if ( read_mbr($arg) ) {    #
             print STDERR "warning: $arg looks like a partitioned disk ";
             print STDERR "(did you want --$role-from=$arg or --disk=$arg?)\n";
         }
 
-        $p->{FILE}   = $arg;
+        $p->{FILE}   = $arg;       # $arg 赋值给 %p 的 FILE 键
         $p->{OFFSET} = 0;
         $p->{BYTES}  = -s $arg;
     }

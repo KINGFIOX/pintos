@@ -50,10 +50,12 @@ static void flush(struct vhprintf_aux *);
    arguments given in ARGS and writes the output to the given
    HANDLE. */
 int vhprintf(int handle, const char *format, va_list args) {
-  struct vhprintf_aux aux;
-  aux.p = aux.buf;
-  aux.char_cnt = 0;
-  aux.handle = handle;
+  struct vhprintf_aux aux = {
+      .p = aux.buf,
+      .char_cnt = 0,
+      .handle = handle,
+  };
+
   __vprintf(format, args, add_char, &aux);
   flush(&aux);
   return aux.char_cnt;

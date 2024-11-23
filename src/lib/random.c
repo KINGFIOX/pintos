@@ -35,7 +35,7 @@ void random_init(unsigned seed) {
   int i;
   uint8_t j;
 
-  for (i = 0; i < 256; i++) s[i] = i;
+  for (i = 0; i < 256; i++) s[i] = i;  //
   for (i = j = 0; i < 256; i++) {
     j += s[i] + seedp[i % sizeof seed];
     swap_byte(s + i, s + j);

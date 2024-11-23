@@ -30,6 +30,7 @@ start:
 	mov %ax, %es
 
 # Set string instructions to go upward.
+# clear direction flag(清除方向标志).
 	cld
 
 #### Get memory size, via interrupt 15h function 88h (see [IntrList]),
@@ -38,8 +39,8 @@ start:
 #### purposes.  We cap memory at 64 MB because that's all we prepare
 #### page tables for, below.
 
-	movb $0x88, %ah
-	int $0x15
+	movb $0x88, %ah 
+	int $0x15 
 	addl $1024, %eax	# Total kB memory
 	cmp $0x10000, %eax	# Cap at 64 MB
 	jbe 1f
@@ -84,34 +85,63 @@ start:
 # Create page directory at 0xf000 (60 kB) and fill with zeroes.
 	mov $0xf00, %ax
 	mov %ax, %es
-	subl %eax, %eax
+	subl %eax, %eax # 0
 	subl %edi, %edi
-	movl $0x400, %ecx
-	rep stosl
+	movl $0x400, %ecx # 1024 entries (4KB/4B)
+	rep stosl # store %eax into [%es:%edi], then add $0x4 to %edi, repeat %ecx times
 
 # Add PDEs to point to page tables for the first 64 MB of RAM.
 # Also add identical PDEs starting at LOADER_PHYS_BASE.
 # See [IA32-v3a] section 3.7.6 "Page-Directory and Page-Table Entries"
 # for a description of the bits in %eax.
+# pte(page directory entry)
+# i386 的分页类似于 sv32, 只有二级, 所以区分 pde 和 pte, 如果是 sv39, 那么就是 PPN2, PPN1, PPN0 了
+# PDE
+# page-table base addr									[31, 12]
+# available for system programmer's use					[11, 9]
+# global page (ignored)									[8]
+# page size(0: 4KB, 1: 4MB)								[7]
+# reserved(set ot 0)									[6]
+# accessed												[5]
+# cache disable											[4]
+# write-through											[3]
+# user/supervisor										[2]
+# read/write											[1]
+# present												[0]
+
+# 0x10007 -> [0001 0000] 000_0 0_0_0_0 0_1_1_1
 
 	movl $0x10007, %eax
-	movl $0x11, %ecx
-	subl %edi, %edi
-1:	movl %eax, %es:(%di)
-	movl %eax, %es:LOADER_PHYS_BASE >> 20(%di)
+	movl $0x11, %ecx # times for loop
+	subl %edi, %edi # 0
+1:	movl %eax, %es:(%di) # fill the PDE in page directory
+	movl %eax, %es:LOADER_PHYS_BASE >> 20(%di) # LOADER_PHYS_BASE = 0xc000_0000
 	addw $4, %di
-	addl $0x1000, %eax
+	addl $0x1000, %eax # + 4KB
 	loop 1b
 
 # Set up page tables for one-to-map linear to physical map for the
 # first 64 MB of RAM.
 # See [IA32-v3a] section 3.7.6 "Page-Directory and Page-Table Entries"
 # for a description of the bits in %eax.
+# PTE
+# page-table base addr									[31, 12]
+# available for system programmer's use					[11, 9]
+# global page											[8]
+# page table attribute index							[7]
+# dirty													[6]
+# accessed												[5]
+# cache disable											[4]
+# write-through											[3]
+# user/supervisor										[2]
+# read/write											[1]
+# present												[0]
 
+# 0x1000 
 	movw $0x1000, %ax
 	movw %ax, %es
 	movl $0x7, %eax
-	movl $0x4000, %ecx
+	movl $0x4000, %ecx # fill (4 * 4k / 4) / 1024 = 4 directory entries
 	subl %edi, %edi
 1:	movl %eax, %es:(%di)
 	addw $4, %di

@@ -92,6 +92,7 @@ int pintos_init(void) {
   console_init();
 
   /* Greet user. */
+  // kernel(printf) -> vprintf -> __vprintf -> vprintf_helper -> putchar_have_lock -> serial_putc -> putc_poll
   printf("Pintos booting with %'" PRIu32 " kB RAM...\n", init_ram_pages * PGSIZE / 1024);
 
   /* Initialize memory system. */
@@ -187,25 +188,22 @@ static void paging_init(void) {
 /** Breaks the kernel command line into words and returns them as
    an argv-like array. */
 static char **read_command_line(void) {
-  static char *argv[LOADER_ARGS_LEN / 2 + 1];
-  char *p, *end;
-  int argc;
-  int i;
+  static char *argv[LOADER_ARGS_LEN / 2 + 1];  // 最多的参数个数, 假设每个参数都是单个字母, 那么 a b c ..., 一个字母+一个空格, 2个字节
 
-  argc = *(uint32_t *)ptov(LOADER_ARG_CNT);
-  p = ptov(LOADER_ARGS);
-  end = p + LOADER_ARGS_LEN;
-  for (i = 0; i < argc; i++) {
+  int argc = *(uint32_t *)ptov(LOADER_ARG_CNT);
+  char *p = ptov(LOADER_ARGS);
+  char *end = p + LOADER_ARGS_LEN;
+  for (int i = 0; i < argc; i++) {
     if (p >= end) PANIC("command line arguments overflow");
 
     argv[i] = p;
     p += strnlen(p, end - p) + 1;
   }
-  argv[argc] = NULL;
+  argv[argc] = NULL;  // 参数数组, 以 NULL 结尾
 
   /* Print kernel command line. */
   printf("Kernel command line:");
-  for (i = 0; i < argc; i++)
+  for (int i = 0; i < argc; i++)
     if (strchr(argv[i], ' ') == NULL)
       printf(" %s", argv[i]);
     else

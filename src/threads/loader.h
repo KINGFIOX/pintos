@@ -12,17 +12,17 @@
    Must be aligned on a 4 MB boundary. */
 #define LOADER_PHYS_BASE 0xc0000000 /**< 3 GB. */
 
-/** Important loader physical addresses. */
-#define LOADER_SIG (LOADER_END - LOADER_SIG_LEN)          /**< 0xaa55 BIOS signature. */
-#define LOADER_PARTS (LOADER_SIG - LOADER_PARTS_LEN)      /**< Partition table. */
-#define LOADER_ARGS (LOADER_PARTS - LOADER_ARGS_LEN)      /**< Command-line args. */
-#define LOADER_ARG_CNT (LOADER_ARGS - LOADER_ARG_CNT_LEN) /**< Number of args. */
-
 /** Sizes of loader data structures. */
 #define LOADER_SIG_LEN 2
 #define LOADER_PARTS_LEN 64
-#define LOADER_ARGS_LEN 128
+#define LOADER_ARGS_LEN 128  // 最多有 128Bytes 的参数
 #define LOADER_ARG_CNT_LEN 4
+
+/** Important loader physical addresses. */
+#define LOADER_SIG (LOADER_END - LOADER_SIG_LEN)          /**< 0xaa55 BIOS signature. [0x7dfe, 0x7e00) */
+#define LOADER_PARTS (LOADER_SIG - LOADER_PARTS_LEN)      /**< Partition table. [0x7dbe, 0x7dfe) */
+#define LOADER_ARGS (LOADER_PARTS - LOADER_ARGS_LEN)      /**< Command-line args. [0x7d3e, 0x7dbe) */
+#define LOADER_ARG_CNT (LOADER_ARGS - LOADER_ARG_CNT_LEN) /**< Number of args. [0x7d3a, 0x7d3e) */
 
 /** GDT selectors defined by loader.
    More selectors are defined by userprog/gdt.h. */
