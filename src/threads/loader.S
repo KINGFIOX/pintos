@@ -69,7 +69,7 @@ read_mbr:
 
 	mov $446, %si			# Offset of partition table entry 1.
 	mov $'1', %al
-check_partition:
+check_partition: # 0x7c47
 	# Is it an unused partition?
 	cmpl $0, %es:(%si)
 	je next_partition
@@ -110,7 +110,7 @@ no_boot_partition:
 #### table entry for the kernel's partition is at ES:SI.  Our job now
 #### is to read the kernel from disk and jump to its start address.
 
-load_kernel:
+load_kernel: # 0x7c7e
 	call puts
 	.string "\rLoading"
 
@@ -124,7 +124,7 @@ load_kernel:
 	cmp $1024, %ecx			# Cap size at 512 kB
 	jbe 1f
 	mov $1024, %cx
-1:
+1: # 0x7c9b
 
 	mov %es:8(%si), %ebx		# EBX = first sector
 	mov $0x2000, %ax		# Start load address: 0x20000
@@ -140,7 +140,7 @@ next_sector:
 	jnz 1f
 	call puts
 	.string "."
-1:
+1: # 0x7cb4
 
 	# Advance memory pointer and disk sector.
 	add $0x20, %ax
@@ -160,16 +160,17 @@ next_sector:
 #### bytes in the loader, we reuse 4 bytes of the loader's code for
 #### this temporary pointer.
 
+# 0x7cbf
 	mov $0x2000, %ax # 我们就是把 kernel 放在 0x2000:0x0000 的地方
 	mov %ax, %es
 	mov %es:0x18, %dx # 0x18 是 ELF header 的 entry point, 这个就是 kernel 的入口地址. 也就是 0xc002_0058
 	mov %dx, start
 	movw $0x2000, start + 2
-	# 58 00 00 20 -> 2000:0058 -> 0x2_0058
+	# 0x7cd7(start): 58 00 00 20 -> 2000:0058 -> 0x2_0058
 	ljmp *start
 
 read_failed:
-start:
+start: # 0x7cd7
 	# Disk sector read failed.
 	call puts
 1:	.string "\rBad read\r"
