@@ -86,6 +86,7 @@ check_partition: # 0x7c47
 
 	# Is it a bootable partition?
 	# Checks if the boot flag at offset 0 is 0x80, indicating a bootable partition.
+	# %es:%si == &entry of partition, sizeof(entry) == 16
 	cmpb $0x80, %es:(%si)
 	je load_kernel
 
@@ -244,7 +245,7 @@ read_sector: # 0x7d1f
 	sub %ax, %ax
 	push %ax			# LBA sector number [48:63], LBA(logic block address, 逻辑块寻址)
 	push %ax			# LBA sector number [32:47]
-	push %ebx			# LBA sector number [0:31]
+	push %ebx			# LBA sector number [0:31], which is 0
 	push %es			# Buffer segment. %es = 0x2000
 	push %ax			# Buffer offset (always 0)
 	push $1				# Number of sectors to read
