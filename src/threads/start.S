@@ -20,11 +20,12 @@
 
 .func start
 .globl start
-start: # [2000:  58]
+start:
 
 # The loader called into us with CS = 0x2000, SS = 0x0000, ESP = 0xf000,
 # but we should initialize the other segment registers.
 
+# 0x2_0058:
 	mov $0x2000, %ax
 	mov %ax, %ds
 	mov %ax, %es
@@ -39,13 +40,15 @@ start: # [2000:  58]
 #### purposes.  We cap memory at 64 MB because that's all we prepare
 #### page tables for, below.
 
+# 0x2_0060:
 	movb $0x88, %ah 
 	int $0x15 
 	addl $1024, %eax	# Total kB memory
 	cmp $0x10000, %eax	# Cap at 64 MB
 	jbe 1f
 	mov $0x10000, %eax
-1:	shrl $2, %eax		# Total 4 kB pages
+1: # 0x2_0078:
+	shrl $2, %eax		# Total 4 kB pages
 	addr32 movl %eax, init_ram_pages - LOADER_PHYS_BASE - 0x20000
 
 #### Enable A20.  Address line 20 is tied low when the machine boots,
@@ -83,6 +86,7 @@ start: # [2000:  58]
 #### directory base register.
 
 # Create page directory at 0xf000 (60 kB) and fill with zeroes.
+# 0x2009d:
 	mov $0xf00, %ax
 	mov %ax, %es
 	subl %eax, %eax # 0
