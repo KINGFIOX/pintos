@@ -77,13 +77,11 @@ int pintos_init(void) NO_RETURN;
 
 /** Pintos main entry point. */
 int pintos_init(void) {
-  char **argv;
-
   /* Clear BSS. */
   bss_init();
 
   /* Break command line into arguments and parse options. */
-  argv = read_command_line();
+  char **argv = read_command_line();
   argv = parse_options(argv);
 
   /* Initialize ourselves as a thread so we can use locks,
@@ -139,7 +137,7 @@ int pintos_init(void) {
 
   /* Finish up. */
   shutdown();
-  thread_exit();
+  thread_exit();  // would call schedule, which would never return, the same as xv6
 }
 
 /** Clear the "BSS", a segment that should be initialized to

@@ -43,7 +43,7 @@ static bool page_from_pool(const struct pool *, void *page);
 
 /** Initializes the page allocator.  At most USER_PAGE_LIMIT
    pages are put into the user pool. */
-void palloc_init(size_t user_page_limit) {
+void palloc_init(size_t user_page_limit) {  // user_page_limit was passed by SIZE_MAX in init.c
   /* Free memory starts at 1 MB and runs to the end of RAM. */
   uint8_t *free_start = ptov(1024 * 1024);
   uint8_t *free_end = ptov(init_ram_pages * PGSIZE);  // init_ram_pages defined in start.S
@@ -63,6 +63,8 @@ void palloc_init(size_t user_page_limit) {
    then the pages are filled with zeros.  If too few pages are
    available, returns a null pointer, unless PAL_ASSERT is set in
    FLAGS, in which case the kernel panics. */
+// 在物理内存上, 找连续 page_cnt 个没有被使用的内存, 并返回起始地址
+// NOTE: 连续分配应该受限, 因为有碎片问题
 void *palloc_get_multiple(enum palloc_flags flags, size_t page_cnt) {
   struct pool *pool = flags & PAL_USER ? &user_pool : &kernel_pool;  // 对应的 pool
 
@@ -70,6 +72,7 @@ void *palloc_get_multiple(enum palloc_flags flags, size_t page_cnt) {
 
   size_t page_idx;
   lock_acquire(&pool->lock);
+  // 找到一段连续的, 长度为 page_cnt * PGSIZE, 没有被使用的内存, 并设置为使用 (分配)
   page_idx = bitmap_scan_and_flip(pool->used_map, 0, page_cnt, false);
   lock_release(&pool->lock);
 
@@ -99,12 +102,10 @@ void *palloc_get_page(enum palloc_flags flags) { return palloc_get_multiple(flag
 
 /** Frees the PAGE_CNT pages starting at PAGES. */
 void palloc_free_multiple(void *pages, size_t page_cnt) {
-  struct pool *pool;
-  size_t page_idx;
-
-  ASSERT(pg_ofs(pages) == 0);
+  ASSERT(pg_ofs(pages) == 0);  // pages 必须 PGSIZE 对齐
   if (pages == NULL || page_cnt == 0) return;
 
+  struct pool *pool;  // 获取 pages 所在的 pool
   if (page_from_pool(&kernel_pool, pages))
     pool = &kernel_pool;
   else if (page_from_pool(&user_pool, pages))
@@ -112,7 +113,7 @@ void palloc_free_multiple(void *pages, size_t page_cnt) {
   else
     NOT_REACHED();
 
-  page_idx = pg_no(pages) - pg_no(pool->base);
+  size_t page_idx = pg_no(pages) - pg_no(pool->base);
 
 #ifndef NDEBUG
   memset(pages, 0xcc, PGSIZE * page_cnt);
@@ -123,6 +124,7 @@ void palloc_free_multiple(void *pages, size_t page_cnt) {
 }
 
 /** Frees the page at PAGE. */
+//
 void palloc_free_page(void *page) { palloc_free_multiple(page, 1); }
 
 /** Initializes pool P as starting at START and ending at END,
