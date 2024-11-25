@@ -52,6 +52,8 @@ static inline void insl(uint16_t port, void *addr, size_t cnt) {
 /** Writes byte DATA to PORT. */
 static inline void outb(uint16_t port, uint8_t data) {
   /* See [IA32-v2b] "OUT". */
+  // %b0 : data 作为一个 byte 传递给 outb 指令. "a" 表示 data 的寄存器
+  // %w1 : port 作为一个 16-bit 的值传递给 outb 指令. N 表示立即数. d 表示 DX 寄存器.
   asm volatile("outb %b0, %w1" : : "a"(data), "Nd"(port));
 }
 

@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "kernel/list.h"
 #include "threads/palloc.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
@@ -44,6 +45,10 @@ struct desc {
   struct lock lock;        /**< Lock. */
 };
 
+/** Our set of descriptors. */
+static struct desc descs[10]; /**< Descriptors. */  // descriptors, 每个元素都对应一个 block_size, 用于管理对应大小的 block
+static size_t desc_cnt;                             /**< Number of descriptors. */
+
 /** Magic number for detecting arena corruption. */
 #define ARENA_MAGIC 0x9a548eed
 
@@ -58,10 +63,6 @@ struct arena {
 struct block {
   struct list_elem free_elem; /**< Free list element. */
 };
-
-/** Our set of descriptors. */
-static struct desc descs[10]; /**< Descriptors. */  // descriptors, 每个元素都对应一个 block_size, 用于管理对应大小的 block
-static size_t desc_cnt;                             /**< Number of descriptors. */
 
 static struct arena *block_to_arena(struct block *);
 static struct block *arena_to_block(struct arena *, size_t idx);
@@ -81,20 +82,20 @@ void malloc_init(void) {
 /** Obtains and returns a new block of at least SIZE bytes.
    Returns a null pointer if memory is not available. */
 void *malloc(size_t size) {
-  struct desc *d;
-  struct block *b;
-  struct arena *a;
-
   /* A null pointer satisfies a request for 0 bytes. */
   if (size == 0) return NULL;
 
   /* Find the smallest descriptor that satisfies a SIZE-byte
      request. */
-  for (d = descs; d < descs + desc_cnt; d++)
+  struct desc *d;
+  for (d = descs; d < descs + desc_cnt; d++) {
     if (d->block_size >= size) break;
+  }
+
   if (d == descs + desc_cnt) {
     /* SIZE is too big for any descriptor.
        Allocate enough pages to hold SIZE plus an arena. */
+    struct arena *a;
     size_t page_cnt = DIV_ROUND_UP(size + sizeof *a, PGSIZE);
     a = palloc_get_multiple(0, page_cnt);
     if (a == NULL) return NULL;
@@ -114,7 +115,7 @@ void *malloc(size_t size) {
     size_t i;
 
     /* Allocate a page. */
-    a = palloc_get_page(0);
+    struct arena *a = palloc_get_page(0);
     if (a == NULL) {
       lock_release(&d->lock);
       return NULL;
@@ -131,8 +132,8 @@ void *malloc(size_t size) {
   }
 
   /* Get a block from free list and return it. */
-  b = list_entry(list_pop_front(&d->free_list), struct block, free_elem);
-  a = block_to_arena(b);
+  struct block *b = list_entry(list_pop_front(&d->free_list), struct block, free_elem);
+  struct arena *a = block_to_arena(b);
   a->free_cnt--;
   lock_release(&d->lock);
   return b;

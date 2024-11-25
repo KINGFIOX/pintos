@@ -79,14 +79,12 @@ static void init_poll(void) {
    I/O.  With interrupt-driven I/O we don't waste CPU time
    waiting for the serial device to become ready. */
 void serial_init_queue(void) {
-  enum intr_level old_level;
-
   if (mode == UNINIT) init_poll();
   ASSERT(mode == POLL);
 
   intr_register_ext(0x20 + 4, serial_interrupt, "serial");
   mode = QUEUE;
-  old_level = intr_disable();
+  enum intr_level old_level = intr_disable();
   write_ier();
   intr_set_level(old_level);
 }
@@ -138,10 +136,10 @@ void serial_notify(void) {
 
 /** Configures the serial port for BPS bits per second. */
 static void set_serial(int bps) {
+  ASSERT(bps >= 300 && bps <= 115200);
+
   int base_rate = 1843200 / 16;       /**< Base rate of 16550A, in Hz. */
   uint16_t divisor = base_rate / bps; /**< Clock rate divisor. */
-
-  ASSERT(bps >= 300 && bps <= 115200);
 
   /* Enable DLAB. */
   outb(LCR_REG, LCR_N81 | LCR_DLAB);
@@ -156,17 +154,17 @@ static void set_serial(int bps) {
 
 /** Update interrupt enable register. */
 static void write_ier(void) {
-  uint8_t ier = 0;
-
   ASSERT(intr_get_level() == INTR_OFF);
 
+  uint8_t ier = 0;
+
   /* Enable transmit interrupt if we have any characters to
-     transmit. */
-  if (!intq_empty(&txq)) ier |= IER_XMIT;
+     transmit. (非空) */
+  if (!intq_empty(&txq)) ier |= IER_XMIT;  // interrupt enable register, transmit
 
   /* Enable receive interrupt if we have room to store any
-     characters we receive. */
-  if (!input_full()) ier |= IER_RECV;
+     characters we receive. (未满) */
+  if (!input_full()) ier |= IER_RECV;  // interrupt enable register
 
   outb(IER_REG, ier);
 }

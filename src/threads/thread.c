@@ -152,34 +152,28 @@ void thread_print_stats(void) { printf("Thread: %lld idle ticks, %lld kernel tic
    PRIORITY, but no actual priority scheduling is implemented.
    Priority scheduling is the goal of Problem 1-3. */
 tid_t thread_create(const char *name, int priority, thread_func *function, void *aux) {
-  struct thread *t;
-  struct kernel_thread_frame *kf;
-  struct switch_entry_frame *ef;
-  struct switch_threads_frame *sf;
-  tid_t tid;
-
   ASSERT(function != NULL);
 
   /* Allocate thread. */
-  t = palloc_get_page(PAL_ZERO);
+  struct thread *t = palloc_get_page(PAL_ZERO);
   if (t == NULL) return TID_ERROR;
 
   /* Initialize thread. */
   init_thread(t, name, priority);
-  tid = t->tid = allocate_tid();
+  tid_t tid = t->tid = allocate_tid();
 
   /* Stack frame for kernel_thread(). */
-  kf = alloc_frame(t, sizeof *kf);
+  struct kernel_thread_frame *kf = alloc_frame(t, sizeof *kf);
   kf->eip = NULL;
   kf->function = function;
   kf->aux = aux;
 
   /* Stack frame for switch_entry(). */
-  ef = alloc_frame(t, sizeof *ef);
+  struct switch_entry_frame *ef = alloc_frame(t, sizeof *ef);
   ef->eip = (void (*)(void))kernel_thread;
 
   /* Stack frame for switch_threads(). */
-  sf = alloc_frame(t, sizeof *sf);
+  struct switch_threads_frame *sf = alloc_frame(t, sizeof *sf);
   sf->eip = switch_entry;
   sf->ebp = 0;
 
@@ -476,13 +470,18 @@ void thread_schedule_tail(struct thread *prev) {
 static void schedule(void) {
   struct thread *cur = running_thread();
   struct thread *next = next_thread_to_run();
-  struct thread *prev = NULL;
 
   ASSERT(intr_get_level() == INTR_OFF);
   ASSERT(cur->status != THREAD_RUNNING);
   ASSERT(is_thread(next));
 
-  if (cur != next) prev = switch_threads(cur, next);
+  // 1. push next
+  // 2. push cur
+  // 3. push return address
+  // 4. call switch_threads
+  // 不过, 比较奇怪的是: 这里的 system v abi 为什么不是 %edi, %esi
+  struct thread *prev = NULL;
+  if (cur != next) prev = switch_threads(cur, next);  // defined in switch.S
   thread_schedule_tail(prev);
 }
 
@@ -500,4 +499,4 @@ static tid_t allocate_tid(void) {
 
 /** Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
-uint32_t thread_stack_ofs = offsetof(struct thread, stack);
+const uint32_t thread_stack_ofs = offsetof(struct thread, stack);  // used in switch.S

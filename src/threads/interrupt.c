@@ -155,9 +155,9 @@ void intr_init(void) {
    interrupt status set to LEVEL. */
 static void register_handler(uint8_t vec_no, int dpl, enum intr_level level, intr_handler_func *handler, const char *name) {
   ASSERT(intr_handlers[vec_no] == NULL);
-  if (level == INTR_ON) {
+  if (level == INTR_ON) {  // INTR_ON
     idt[vec_no] = make_trap_gate(intr_stubs[vec_no], dpl);
-  } else {
+  } else {  // INTR_OFF
     idt[vec_no] = make_intr_gate(intr_stubs[vec_no], dpl);
   }
   intr_handlers[vec_no] = handler;
@@ -169,6 +169,8 @@ static void register_handler(uint8_t vec_no, int dpl, enum intr_level level, int
    execute with interrupts disabled. */
 void intr_register_ext(uint8_t vec_no, intr_handler_func *handler, const char *name) {
   ASSERT(vec_no >= 0x20 && vec_no <= 0x2f);
+  // interrupt register external
+  // 这里的 register 表示注册, 而不是寄存器
   register_handler(vec_no, 0, INTR_OFF, handler, name);
 }
 
@@ -192,12 +194,19 @@ void intr_register_int(uint8_t vec_no, int dpl, enum intr_level level, intr_hand
 
 /** Returns true during processing of an external interrupt
    and false at all other times. */
-bool intr_context(void) { return in_external_intr; }
+bool intr_context(void) {
+  // 如果正在发生 external interrupt, 那么就是 true
+  // 否则就是 false
+  return in_external_intr;
+}
 
 /** During processing of an external interrupt, directs the
    interrupt handler to yield to a new process just before
    returning from the interrupt.  May not be called at any other
-   time. */
+   time.
+   在处理外部中断时, 指示中断处理函数(handler)在返回之前, 切换到一个新的进程.
+   通常用于在 handler 处理期间, 检测到需要调度新进程的情况.
+*/
 void intr_yield_on_return(void) {
   ASSERT(intr_context());
   yield_on_return = true;

@@ -12,7 +12,12 @@
 #### restore the registers.  As part of switching stacks we record the
 #### current stack pointer in CUR's thread structure.
 
+.globl switch_entry
 .globl switch_threads
+
+.globl thread_stack_ofs # defined in thread/thread.c
+.globl thread_schedule_tail # defined in thread/thread.c
+
 .func switch_threads
 switch_threads:
 	# Save caller's register state.
@@ -21,34 +26,41 @@ switch_threads:
 	# but requires us to preserve %ebx, %ebp, %esi, %edi.  See
 	# [SysV-ABI-386] pages 3-11 and 3-12 for details.
 	#
-	# This stack frame must match the one set up by thread_create()
-	# in size.
+	# This stack frame must match the one set up by thread_create() in size.
+	# save callee-saved registers
 	pushl %ebx
 	pushl %ebp
 	pushl %esi
 	pushl %edi
 
 	# Get offsetof (struct thread, stack).
-.globl thread_stack_ofs
 	mov thread_stack_ofs, %edx
 
 	# Save current stack pointer to old thread's stack, if any.
-	movl SWITCH_CUR(%esp), %eax
-	movl %esp, (%eax,%edx,1)
+	# SWITCH_CUR = 20, a macro defined in threads/switch.h
+	# next             24(%esp)
+	# cur              20(%esp)
+	# <return address> 16(%esp)
+	# %ebx             12(%esp)
+	# %ebp             8(%esp)
+	# %esi             4(%esp)
+	# %edi             0(%esp)
+	movl SWITCH_CUR(%esp), %eax # cur. as return value
+	movl %esp, (%eax,%edx,1) # cur->stack = %esp
 
 	# Restore stack pointer from new thread's stack.
-	movl SWITCH_NEXT(%esp), %ecx
-	movl (%ecx,%edx,1), %esp
+	# SWITCH_NEXT = 24, a macro defined in threads/switch.h
+	movl SWITCH_NEXT(%esp), %ecx # next
+	movl (%ecx,%edx,1), %esp # %esp = next->stack
 
 	# Restore caller's register state.
 	popl %edi
 	popl %esi
 	popl %ebp
 	popl %ebx
-        ret
+    ret
 .endfunc
 
-.globl switch_entry
 .func switch_entry
 switch_entry:
 	# Discard switch_threads() arguments.
@@ -56,7 +68,6 @@ switch_entry:
 
 	# Call thread_schedule_tail(prev).
 	pushl %eax
-.globl thread_schedule_tail
 	call thread_schedule_tail
 	addl $4, %esp
 

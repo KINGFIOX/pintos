@@ -153,6 +153,7 @@ void bitmap_flip(struct bitmap *b, size_t bit_idx) {
 }
 
 /** Returns the value of the bit numbered IDX in B. */
+// return bitmap[idx]
 bool bitmap_test(const struct bitmap *b, size_t idx) {
   ASSERT(b != NULL);
   ASSERT(idx < b->bit_cnt);
@@ -175,7 +176,7 @@ void bitmap_set_multiple(struct bitmap *b, size_t start, size_t cnt, bool value)
   ASSERT(start + cnt <= b->bit_cnt);
 
   for (size_t i = 0; i < cnt; i++) {
-    bitmap_set(b, start + i, value);
+    bitmap_set(b, start + i, value);  // set bitmap[start : start + i)
   }
 }
 
@@ -196,6 +197,7 @@ size_t bitmap_count(const struct bitmap *b, size_t start, size_t cnt, bool value
 
 /** Returns true if any bits in B between START and START + CNT,
    exclusive, are set to VALUE, and false otherwise. */
+// return value in bitmap[start : start+cnt)
 bool bitmap_contains(const struct bitmap *b, size_t start, size_t cnt, bool value) {
   ASSERT(b != NULL);
   ASSERT(start <= b->bit_cnt);
@@ -231,9 +233,16 @@ size_t bitmap_scan(const struct bitmap *b, size_t start, size_t cnt, bool value)
   ASSERT(b != NULL);
   ASSERT(start <= b->bit_cnt);
 
-  if (cnt <= b->bit_cnt) {  // cnt: 待分配的数量, 待分配的数量 must <= bitmap 总数量
+  // cnt: 待分配的数量, 待分配的数量 must <= bitmap 总数量
+  if (cnt <= b->bit_cnt) {
     size_t last = b->bit_cnt - cnt;
     for (size_t i = start; i <= last; i++) {
+      // 比方说: value = 1 , !value = 0
+      // not 0 in bitmap[i : i+cnt) => bitmap[i : i+cnt) 全是 1
+      // 如果 bitmap[i : i+cnt) 全是 1, 那么返回 i
+      //
+      // NOTE: 因此 bitmap_scan 的返回值是:
+      // 找到: 从 start 开始, 长度为 cnt 的连续为 value 的起始 index
       if (!bitmap_contains(b, i, cnt, !value)) {
         return i;
       }
@@ -251,10 +260,14 @@ size_t bitmap_scan(const struct bitmap *b, size_t start, size_t cnt, bool value)
    Bits are set atomically, but testing bits is not atomic with
    setting them. */
 size_t bitmap_scan_and_flip(struct bitmap *b, size_t start, size_t cnt, bool value) {
-  size_t idx = bitmap_scan(b, start, cnt, value);
+  size_t idx = bitmap_scan(b, start, cnt, value);  // idx 为: 从 start 开始, 长度为 cnt 的连续为 value
   if (idx != BITMAP_ERROR) {
+    // 如果找到了, 那么将 bitmap[idx : idx+cnt) 设置为 !value
+    //
+    // 也就是: 找到 idx, bitmap[idx, idx + cnt) = all value, 其中 idx in [start, start + cnt]
+    // 并将 bitmap[idx : idx+cnt) 设置为 !value
     bitmap_set_multiple(b, idx, cnt, !value);
-  }
+  }  // 否则, 返回 BITMAP_ERROR
   return idx;
 }
 
