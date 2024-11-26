@@ -130,7 +130,7 @@ int pintos_init(void) {
 
   if (*argv != NULL) {
     /* Run actions specified on kernel command line. */
-    run_actions(argv);
+    run_actions(argv);  // 将 idle 进程, 拨到 run 状态
   } else {
     // TODO: no command line passed to kernel. Run interactively
   }

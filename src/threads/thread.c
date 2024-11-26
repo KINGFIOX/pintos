@@ -159,11 +159,11 @@ tid_t thread_create(const char *name, int priority, thread_func *function, void 
   if (t == NULL) return TID_ERROR;
 
   /* Initialize thread. */
-  init_thread(t, name, priority);
+  init_thread(t, name, priority);  // alloc a page for the thread (meta data, stack, THREAD_BLOCKED).
   tid_t tid = t->tid = allocate_tid();
 
   /* Stack frame for kernel_thread(). */
-  struct kernel_thread_frame *kf = alloc_frame(t, sizeof *kf);
+  struct kernel_thread_frame *kf = alloc_frame(t, sizeof *kf);  // 从 kernel page 上划分出一块 frame
   kf->eip = NULL;
   kf->function = function;
   kf->aux = aux;
@@ -389,9 +389,9 @@ static void init_thread(struct thread *t, const char *name, int priority) {
   t->priority = priority;
   t->magic = THREAD_MAGIC;
 
-  old_level = intr_disable();
-  list_push_back(&all_list, &t->allelem);
-  intr_set_level(old_level);
+  old_level = intr_disable();              // get previous interrupt level
+  list_push_back(&all_list, &t->allelem);  // all_list.push_back(t->allelem)
+  intr_set_level(old_level);               // restore previous interrupt level
 }
 
 /** Allocates a SIZE-byte frame at the top of thread T's stack and
