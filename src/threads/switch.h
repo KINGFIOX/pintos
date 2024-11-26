@@ -2,6 +2,9 @@
 #define THREADS_SWITCH_H
 
 #ifndef __ASSEMBLER__
+
+#include <stdint.h>
+
 /** switch_thread()'s stack frame. */
 struct switch_threads_frame {
   uint32_t edi;        /**<  0: Saved %edi. */
