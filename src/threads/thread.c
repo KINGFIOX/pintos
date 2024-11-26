@@ -163,18 +163,18 @@ tid_t thread_create(const char *name, int priority, thread_func *function, void 
   tid_t tid = t->tid = allocate_tid();
 
   /* Stack frame for kernel_thread(). */
-  struct kernel_thread_frame *kf = alloc_frame(t, sizeof *kf);  // 从 kernel page 上划分出一块 frame
-  kf->eip = NULL;
+  struct kernel_thread_frame *kf = alloc_frame(t, sizeof *kf);  // 从 kernel page 上划分出一块 frame (高地址)
+  kf->eip = NULL;                                               // 这个实际上是 kernel_thread 的返回地址, 但是我们实际上要求 kernel_thread 不会返回
   kf->function = function;
   kf->aux = aux;
 
   /* Stack frame for switch_entry(). */
   struct switch_entry_frame *ef = alloc_frame(t, sizeof *ef);
-  ef->eip = (void (*)(void))kernel_thread;
+  ef->eip = (void (*)(void))kernel_thread;  // switch_entry 中 ret 需要返回的地址
 
   /* Stack frame for switch_threads(). */
   struct switch_threads_frame *sf = alloc_frame(t, sizeof *sf);
-  sf->eip = switch_entry;
+  sf->eip = switch_entry;  // defined in switch.S . 这是 thread 第一次被 switch into 时, 需要执行的代码
   sf->ebp = 0;
 
   /* Add to run queue. */
@@ -323,7 +323,7 @@ int thread_get_recent_cpu(void) {
    blocks.  After that, the idle thread never appears in the
    ready list.  It is returned by next_thread_to_run() as a
    special case when the ready list is empty. */
-static void idle(void *idle_started_ UNUSED) {
+static void idle(void *idle_started_) {
   struct semaphore *idle_started = idle_started_;
   idle_thread = thread_current();
   sema_up(idle_started);
@@ -396,7 +396,7 @@ static void init_thread(struct thread *t, const char *name, int priority) {
 
 /** Allocates a SIZE-byte frame at the top of thread T's stack and
    returns a pointer to the frame's base. */
-static void *alloc_frame(struct thread *t, size_t size) {
+static void *alloc_frame(struct thread *t, size_t size) {  // 分配的是: 高地址
   /* Stack data is always allocated in word-size units. */
   ASSERT(is_thread(t));
   ASSERT(size % sizeof(uint32_t) == 0);

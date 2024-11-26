@@ -46,7 +46,7 @@ switch_threads:
 	# %esi             4(%esp)
 	# %edi             0(%esp)
 	movl SWITCH_CUR(%esp), %eax # cur. as return value
-	movl %esp, (%eax,%edx,1) # cur->stack = %esp
+	movl %esp, (%eax,%edx,1) # cur->stack = %esp (栈顶指针)
 
 	# Restore stack pointer from new thread's stack.
 	# SWITCH_NEXT = 24, a macro defined in threads/switch.h
@@ -66,7 +66,7 @@ switch_entry:
 	# Discard switch_threads() arguments.
 	addl $8, %esp
 
-	# Call thread_schedule_tail(prev).
+	# Call thread_schedule_tail(prev). %eax was set by switch_threads().
 	pushl %eax
 	call thread_schedule_tail
 	addl $4, %esp
