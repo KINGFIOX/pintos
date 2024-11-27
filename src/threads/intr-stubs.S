@@ -56,7 +56,7 @@ intr_entry:
 	/* Call interrupt handler. */
 	pushl %esp
 	call intr_handler
-	addl $4, %esp
+	addl $4, %esp # 这里会贯穿, 直接到下面的 intr_exit, 这与栈无关系, 指向相邻的指令
 .endfunc
 
 /* Interrupt exit.
