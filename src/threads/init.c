@@ -133,6 +133,17 @@ int pintos_init(void) {
     run_actions(argv);
   } else {
     // TODO: no command line passed to kernel. Run interactively
+    while (true) {
+      printf("pkuos> ");
+      char ch;
+      char buf[128] = {};
+      int len = 0;
+      while ((ch = input_getc()) != '\r') {
+        putchar(ch);
+        buf[len++] = ch;
+      }
+      putchar('\n');
+    }
   }
 
   /* Finish up. */
