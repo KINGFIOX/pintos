@@ -63,9 +63,11 @@ static size_t user_page_limit = SIZE_MAX;
 static void bss_init(void);
 static void paging_init(void);
 
-static char **read_command_line(void);
+static char **read_command_line(int argc, char *p);
 static char **parse_options(char **argv);
 static void run_actions(char **argv);
+static void run_interactive(char **argv) UNUSED;
+static void interactive(char *argv[]);
 static void usage(void);
 
 #ifdef FILESYS
@@ -81,7 +83,9 @@ int pintos_init(void) {
   bss_init();
 
   /* Break command line into arguments and parse options. */
-  char **argv = read_command_line();
+  int argc = *(uint32_t *)ptov(LOADER_ARG_CNT);
+  char *p = ptov(LOADER_ARGS);
+  char **argv = read_command_line(argc, p);
   argv = parse_options(argv);
 
   /* Initialize ourselves as a thread so we can use locks,
@@ -133,22 +137,34 @@ int pintos_init(void) {
     run_actions(argv);
   } else {
     // TODO: no command line passed to kernel. Run interactively
-    while (true) {
-      printf("pkuos> ");
-      char ch;
-      char buf[128] = {};
-      int len = 0;
-      while ((ch = input_getc()) != '\r') {
-        putchar(ch);
-        buf[len++] = ch;
-      }
-      putchar('\n');
-    }
+    interactive(argv);
   }
 
   /* Finish up. */
   shutdown();
   thread_exit();  // would call schedule, which would never return, the same as xv6
+}
+
+/** the argv 只是一个复用 */
+static void interactive(char *argv[]) {
+  while (true) {
+    printf("pkuos> ");
+    char buf[128] = {};
+    int len = 0;
+    char ch;
+    while ((ch = input_getc()) != '\r') {
+      putchar(ch);
+      buf[len++] = ch;
+    }
+    putchar('\n');  // 因为最后按下了回车
+    buf[len] = '\0';
+    char *token, *save_ptr;
+    int argc = 0;
+    for (token = strtok_r(buf, " \t", &save_ptr); token != NULL; token = strtok_r(NULL, " \t", &save_ptr)) {
+      argv[argc++] = token;
+    }
+    if (argv[0] != NULL) run_interactive(argv);
+  }
 }
 
 /** Clear the "BSS", a segment that should be initialized to
@@ -194,13 +210,13 @@ static void paging_init(void) {
   asm volatile("movl %0, %%cr3" : : "r"(vtop(init_page_dir)));
 }
 
+/* ---------- ---------- ---------- ---------- command line ---------- ---------- ---------- ---------- */
+
 /** Breaks the kernel command line into words and returns them as
    an argv-like array. */
-static char **read_command_line(void) {
+static char **read_command_line(int argc, char *p) {
   static char *argv[LOADER_ARGS_LEN / 2 + 1];  // 最多的参数个数, 假设每个参数都是单个字母, 那么 a b c ..., 一个字母+一个空格, 2个字节
 
-  int argc = *(uint32_t *)ptov(LOADER_ARG_CNT);
-  char *p = ptov(LOADER_ARGS);
   char *end = p + LOADER_ARGS_LEN;
   for (int i = 0; i < argc; i++) {
     if (p >= end) PANIC("command line arguments overflow");
@@ -230,34 +246,40 @@ static char **parse_options(char **argv) {
     char *name = strtok_r(*argv, "=", &save_ptr);
     char *value = strtok_r(NULL, "", &save_ptr);
 
-    if (!strcmp(name, "-h"))
+    if (!strcmp(name, "-h")) {
       usage();
-    else if (!strcmp(name, "-q"))
+    } else if (!strcmp(name, "-q")) {
       shutdown_configure(SHUTDOWN_POWER_OFF);
-    else if (!strcmp(name, "-r"))
+    } else if (!strcmp(name, "-r")) {
       shutdown_configure(SHUTDOWN_REBOOT);
+    }
 #ifdef FILESYS
-    else if (!strcmp(name, "-f"))
+    else if (!strcmp(name, "-f")) {
       format_filesys = true;
-    else if (!strcmp(name, "-filesys"))
+    } else if (!strcmp(name, "-filesys")) {
       filesys_bdev_name = value;
-    else if (!strcmp(name, "-scratch"))
+    } else if (!strcmp(name, "-scratch")) {
       scratch_bdev_name = value;
+    }
 #ifdef VM
-    else if (!strcmp(name, "-swap"))
+    else if (!strcmp(name, "-swap")) {
       swap_bdev_name = value;
+    }
 #endif
 #endif
-    else if (!strcmp(name, "-rs"))
+    else if (!strcmp(name, "-rs")) {
       random_init(atoi(value));
-    else if (!strcmp(name, "-mlfqs"))
+    } else if (!strcmp(name, "-mlfqs")) {
       thread_mlfqs = true;
+    }
 #ifdef USERPROG
-    else if (!strcmp(name, "-ul"))
+    else if (!strcmp(name, "-ul")) {
       user_page_limit = atoi(value);
+    }
 #endif
-    else
+    else {
       PANIC("unknown option `%s' (use -h for help)", name);
+    }
   }
 
   /* Initialize the random number generator based on the system
@@ -273,6 +295,8 @@ static char **parse_options(char **argv) {
   return argv;
 }
 
+/* ---------- ---------- ---------- ---------- action ---------- ---------- ---------- ---------- */
+
 /** Runs the task specified in ARGV[1]. */
 static void run_task(char **argv) {
   const char *task = argv[1];
@@ -286,25 +310,61 @@ static void run_task(char **argv) {
   printf("Execution of '%s' complete.\n", task);
 }
 
+static void act_whoami(char **argv UNUSED) { printf("miao miao miao\n"); }
+
+static void act_exit(char **argv UNUSED) { shutdown_power_off(); }
+
+/* An action. */
+struct action {
+  char *name;                    /**< Action name. */
+  int argc;                      /**< # of args, including action name. */
+  void (*function)(char **argv); /**< Function to execute action. */
+};
+
+/* Table of supported actions. */
+static const struct action actions[] = {
+    {"run", 2, run_task},      /*  */
+    {"whoami", 1, act_whoami}, /*  */
+    {"exit", 1, act_exit},     /*  */
+#ifdef FILESYS
+    {"ls", 1, fsutil_ls},      {"cat", 2, fsutil_cat}, {"rm", 2, fsutil_rm}, {"extract", 1, fsutil_extract}, {"append", 2, fsutil_append},
+#endif
+    {NULL, 0, NULL},
+};
+
+static void run_interactive(char **argv) {
+  const struct action *act;
+
+  /* Find action name. */
+  for (act = actions; /*dead loop*/; act++) {
+    if (0 == strcmp(*argv, act->name)) break;  // 找到 action
+  }
+
+  if (act->name == NULL) {  // check found action
+    printf("unknown action `%s' (use -h for help)", *argv);
+    return;
+  }
+
+  int argc = 0;
+  while (argv[argc] != NULL) argc++;
+  printf("argc: %d\n", argc);
+
+  /* Check for required arguments. */
+  for (int i = 1; i < act->argc; i++) {
+    if (argv[i] == NULL) {
+      printf("action `%s' requires %d argument(s)", *argv, act->argc - 1);
+      return;
+    }
+  }
+
+  /* Invoke action and advance. */
+  act->function(argv);
+  argv += act->argc;
+}
+
 /** Executes all of the actions specified in ARGV[]
    up to the null pointer sentinel. */
 static void run_actions(char **argv) {
-  /* An action. */
-  struct action {
-    char *name;                    /**< Action name. */
-    int argc;                      /**< # of args, including action name. */
-    void (*function)(char **argv); /**< Function to execute action. */
-  };
-
-  /* Table of supported actions. */
-  static const struct action actions[] = {
-      {"run", 2, run_task},
-#ifdef FILESYS
-      {"ls", 1, fsutil_ls}, {"cat", 2, fsutil_cat}, {"rm", 2, fsutil_rm}, {"extract", 1, fsutil_extract}, {"append", 2, fsutil_append},
-#endif
-      {NULL, 0, NULL},
-  };
-
   while (*argv != NULL) {
     const struct action *a;
 
