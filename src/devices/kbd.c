@@ -46,9 +46,16 @@ struct keymap {
    the Shift keys are down.  Case of letters is an exception
    that we handle elsewhere.  */
 static const struct keymap invariant_keymap[] = {
-    {0x01, "\033"},                                                                                                                         /**< Escape. */
-    {0x0e, "\b"},   {0x0f, "\tQWERTYUIOP"}, {0x1c, "\r"}, {0x1e, "ASDFGHJKL"}, {0x2c, "ZXCVBNM"}, {0x37, "*"}, {0x39, " "}, {0x53, "\177"}, /**< Delete. */
-    {0, NULL},
+    {0x01, "\033"},         /**<  */
+    {0x0e, "\b"},           /**<  */
+    {0x0f, "\tQWERTYUIOP"}, /**<  */
+    {0x1c, "\r"},           /**<  */
+    {0x1e, "ASDFGHJKL"},    /**<  */
+    {0x2c, "ZXCVBNM"},      /**<  */
+    {0x37, "*"},            /**<  */
+    {0x39, " "},            /**<  */
+    {0x53, "\177"},         /**<  */
+    {0, NULL},              /**<  */
 };
 
 /** Characters for keys pressed without Shift, for those keys
@@ -71,29 +78,24 @@ static void keyboard_interrupt(struct intr_frame *args UNUSED) {
   bool alt = left_alt || right_alt;
   bool ctrl = left_ctrl || right_ctrl;
 
-  /* Keyboard scancode. */
-  unsigned code;
-
-  /* False if key pressed, true if key released. */
-  bool release;
-
-  /* Character that corresponds to `code'. */
-  uint8_t c;
-
   /* Read scancode, including second byte if prefix code. */
-  code = inb(DATA_REG);
-  if (code == 0xe0) code = (code << 8) | inb(DATA_REG);
+  unsigned code = inb(DATA_REG);                         // Keyboard scancode.
+  if (code == 0xe0) code = (code << 8) | inb(DATA_REG);  // scan code prefix
 
-  /* Bit 0x80 distinguishes key press from key release
-     (even if there's a prefix). */
-  release = (code & 0x80) != 0;
-  code &= ~0x80u;
+  /* Bit 0x80 distinguishes key press from key release (even if there's a prefix). */
+  bool release = (code & 0x80) != 0;  // False if key pressed, true if key released.
+  code &= ~0x80u;                     // 清除最高位, 最高位表示 release/press, 获取实际的 key code
+
+  uint8_t c;  // Character that corresponds to `code'.
 
   /* Interpret key. */
   if (code == 0x3a) {
     /* Caps Lock. */
-    if (!release) caps_lock = !caps_lock;
-  } else if (map_key(invariant_keymap, code, &c) || (!shift && map_key(unshifted_keymap, code, &c)) || (shift && map_key(shifted_keymap, code, &c))) {
+    if (!release) caps_lock = !caps_lock;                       // 切换 caps lock 状态
+  } else if (map_key(invariant_keymap, code, &c)                /*  */
+             || (!shift && map_key(unshifted_keymap, code, &c)) /*  */
+             || (shift && map_key(shifted_keymap, code, &c))    /*  */
+  ) {
     /* Ordinary character. */
     if (!release) {
       /* Reboot if Ctrl+Alt+Del pressed. */
