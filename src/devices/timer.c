@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 #include "devices/pit.h"
+#include "kernel/list.h"
 #include "threads/interrupt.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
@@ -32,11 +33,27 @@ static void busy_wait(int64_t loops);
 static void real_time_sleep(int64_t num, int32_t denom);
 static void real_time_delay(int64_t num, int32_t denom);
 
+/* ---------- ---------- sleep ---------- ---------- */
+
+// 有点好奇一件事情, 就是: 会不会有多线程的风险
+
+struct list timer_sleep_list;
+
+struct timer_sleep {
+  int64_t start;
+  int64_t ticks;
+  struct semaphore sema;
+  struct list_elem elem;
+};
+
+/* ---------- ----------  ---------- ---------- */
+
 /** Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
 void timer_init(void) {
   pit_configure_channel(0, 2, TIMER_FREQ);
   intr_register_ext(0x20, timer_interrupt, "8254 Timer");
+  list_init(&timer_sleep_list);
 }
 
 /** Calibrates(标准) loops_per_tick, used to implement brief delays. */
@@ -73,14 +90,30 @@ int64_t timer_ticks(void) {
    should be a value once returned by timer_ticks(). */
 int64_t timer_elapsed(int64_t then) { return timer_ticks() - then; }
 
+/* ---------- ---------- sleep ---------- ---------- */
+
 /** Sleeps for approximately TICKS timer ticks.  Interrupts must
    be turned on. */
 void timer_sleep(int64_t ticks) {
   int64_t start = timer_ticks();
 
   ASSERT(intr_get_level() == INTR_ON);
-  while (timer_elapsed(start) < ticks) thread_yield();
+
+  struct timer_sleep ts = {
+      .start = start,
+      .ticks = ticks,
+  };
+  sema_init(&ts.sema, 0);
+
+  list_push_back(&timer_sleep_list, &ts.elem);
+
+  sema_down(&ts.sema);
+  // while (timer_elapsed(start) < ticks) thread_yield();
+
+
 }
+
+/* ---------- ---------- ---------- ---------- */
 
 /** Sleeps for approximately MS milliseconds.  Interrupts must be
    turned on. */
@@ -127,6 +160,18 @@ void timer_print_stats(void) { printf("Timer: %" PRId64 " ticks\n", timer_ticks(
 /** Timer interrupt handler. */
 static void timer_interrupt(struct intr_frame *args UNUSED) {
   ticks++;
+  struct list_elem * del = NULL;
+  for (struct list_elem *elem = list_begin(&timer_sleep_list); elem != list_end(&timer_sleep_list); elem = list_next(elem)) {
+    struct timer_sleep *ts = list_entry(elem, struct timer_sleep, elem);
+    if (timer_elapsed(ts->start) >= ts->ticks) {
+      sema_up(&ts->sema);
+      del = &ts->elem;
+      break;
+    }
+  }
+  if (del != NULL) {
+    list_remove(del);
+  }
   thread_tick();
 }
 
