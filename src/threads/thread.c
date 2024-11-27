@@ -112,7 +112,7 @@ void thread_start(void) {
   intr_enable();
 
   /* Wait for the idle thread to initialize idle_thread. */
-  sema_down(&idle_started);
+  sema_down(&idle_started);  // sema_down -> thread_block -> schedule
 }
 
 /** Called by the timer interrupt handler at each timer tick.
