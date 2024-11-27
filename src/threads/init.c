@@ -156,14 +156,18 @@ static void interactive(char *argv[]) {
       putchar(ch);
       buf[len++] = ch;
     }
-    putchar('\n');  // 因为最后按下了回车
+    putchar('\n');
     buf[len] = '\0';
+    if (len == 0) continue;
     char *token, *save_ptr;
     int argc = 0;
     for (token = strtok_r(buf, " \t", &save_ptr); token != NULL; token = strtok_r(NULL, " \t", &save_ptr)) {
       argv[argc++] = token;
     }
     if (argv[0] != NULL) run_interactive(argv);
+    for (int i = 0; i < argc; i++) {  // clear argv
+      argv[i] = NULL;
+    }
   }
 }
 
@@ -297,28 +301,38 @@ static char **parse_options(char **argv) {
 
 /* ---------- ---------- ---------- ---------- action ---------- ---------- ---------- ---------- */
 
+#define ERT_NOT_FOUND 1  // error run test
+
 /** Runs the task specified in ARGV[1]. */
-static void run_task(char **argv) {
+static int run_task(char **argv) {
   const char *task = argv[1];
 
   printf("Executing '%s':\n", task);
 #ifdef USERPROG
   process_wait(process_execute(task));
 #else
-  run_test(task);
+  int ret = run_test(task);
+  if (ret == -ERT_NOT_FOUND) {
+    printf("not found test '%s'.\n", task);
+    return ret;
+  }
 #endif
   printf("Execution of '%s' complete.\n", task);
+  return 0;
 }
 
-static void act_whoami(char **argv UNUSED) { printf("miao miao miao\n"); }
+static int act_whoami(char **argv UNUSED) {
+  printf("miao miao miao\n");
+  return 0;
+}
 
-static void act_exit(char **argv UNUSED) { shutdown_power_off(); }
+NO_RETURN static int act_exit(char **argv UNUSED) { shutdown_power_off(); }
 
 /* An action. */
 struct action {
-  char *name;                    /**< Action name. */
-  int argc;                      /**< # of args, including action name. */
-  void (*function)(char **argv); /**< Function to execute action. */
+  const char *name;             /**< Action name. */
+  int argc;                     /**< # of args, including action name. */
+  int (*function)(char **argv); /**< Function to execute action. */
 };
 
 /* Table of supported actions. */
@@ -327,7 +341,11 @@ static const struct action actions[] = {
     {"whoami", 1, act_whoami}, /*  */
     {"exit", 1, act_exit},     /*  */
 #ifdef FILESYS
-    {"ls", 1, fsutil_ls},      {"cat", 2, fsutil_cat}, {"rm", 2, fsutil_rm}, {"extract", 1, fsutil_extract}, {"append", 2, fsutil_append},
+    {"ls", 1, fsutil_ls},           /*  */
+    {"cat", 2, fsutil_cat},         /*  */
+    {"rm", 2, fsutil_rm},           /*  */
+    {"extract", 1, fsutil_extract}, /*  */
+    {"append", 2, fsutil_append},   /*  */
 #endif
     {NULL, 0, NULL},
 };
@@ -336,29 +354,29 @@ static void run_interactive(char **argv) {
   const struct action *act;
 
   /* Find action name. */
-  for (act = actions; /*dead loop*/; act++) {
+  for (act = actions; act->name /*dead loop*/; act++) {
     if (0 == strcmp(*argv, act->name)) break;  // 找到 action
   }
 
   if (act->name == NULL) {  // check found action
-    printf("unknown action `%s' (use -h for help)", *argv);
+    printf("unknown action `%s' (use -h for help)\n", *argv);
     return;
   }
 
   int argc = 0;
-  while (argv[argc] != NULL) argc++;
-  printf("argc: %d\n", argc);
+  while (argv[argc] != NULL) argc++;  // count args
+  // printf("argc: %d\n", argc);
 
-  /* Check for required arguments. */
-  for (int i = 1; i < act->argc; i++) {
-    if (argv[i] == NULL) {
-      printf("action `%s' requires %d argument(s)", *argv, act->argc - 1);
-      return;
-    }
+  if (argc != act->argc) {
+    printf("action `%s' requires %d / %d\n", *argv, argc, act->argc);
+    return;
   }
 
   /* Invoke action and advance. */
-  act->function(argv);
+  int ret = act->function(argv);
+  if (ret == -ERT_NOT_FOUND) {
+    // do nothing
+  }
   argv += act->argc;
 }
 
@@ -385,7 +403,11 @@ static void run_actions(char **argv) {
     }
 
     /* Invoke action and advance. */
-    a->function(argv);
+    int ret = a->function(argv);
+    if (ret == -ERT_NOT_FOUND) {
+      PANIC("no test named \"%s\"", argv[1]);
+    }
+
     argv += a->argc;
   }
 }
