@@ -43,9 +43,7 @@ static const char *test_name;
 
 /** Runs the test named NAME. */
 int run_test(const char *name) {
-  const struct test *t;
-
-  for (t = tests; t < tests + sizeof tests / sizeof *tests; t++) {
+  for (const struct test *t = tests; t < tests + sizeof tests / sizeof *tests; t++) {
     if (!strcmp(name, t->name)) {
       test_name = name;
       msg("begin");

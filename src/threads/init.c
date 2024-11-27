@@ -145,25 +145,44 @@ int pintos_init(void) {
   thread_exit();  // would call schedule, which would never return, the same as xv6
 }
 
+static int readline(char *buf, int size) {
+  int len = 0;
+  char ch;
+  while ((ch = input_getc()) != '\r' && len < size) {
+    if (ch == '\177') {
+      if (len > 0) {
+        buf[--len] = '\0';
+        putchar('\b');
+        putchar(' ');
+        putchar('\b');
+      }
+    } else {
+      putchar(ch);
+      buf[len++] = ch;
+    }
+  }
+  putchar('\n');
+  buf[len] = '\0';
+  return len;
+}
+
+static int tokenize(char *buf, char **argv) {
+  char *token, *save_ptr;
+  int argc = 0;
+  for (token = strtok_r(buf, " \t", &save_ptr); token != NULL; token = strtok_r(NULL, " \t", &save_ptr)) {
+    argv[argc++] = token;
+  }
+  return argc;
+}
+
 /** the argv 只是一个复用 */
 static void interactive(char *argv[]) {
   while (true) {
     printf("pkuos> ");
     char buf[128] = {};
-    int len = 0;
-    char ch;
-    while ((ch = input_getc()) != '\r') {
-      putchar(ch);
-      buf[len++] = ch;
-    }
-    putchar('\n');
-    buf[len] = '\0';
+    int len = readline(buf, sizeof(buf));
     if (len == 0) continue;
-    char *token, *save_ptr;
-    int argc = 0;
-    for (token = strtok_r(buf, " \t", &save_ptr); token != NULL; token = strtok_r(NULL, " \t", &save_ptr)) {
-      argv[argc++] = token;
-    }
+    int argc = tokenize(buf, argv);
     if (argv[0] != NULL) run_interactive(argv);
     for (int i = 0; i < argc; i++) {  // clear argv
       argv[i] = NULL;
