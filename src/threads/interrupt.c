@@ -310,32 +310,30 @@ static inline uint64_t make_idtr_operand(uint16_t limit, void *base) { return li
    intr-stubs.S.  FRAME describes the interrupt and the
    interrupted thread's registers. */
 void intr_handler(struct intr_frame *frame) {
-  bool external;
-  intr_handler_func *handler;
-
   /* External interrupts are special.
      We only handle one at a time (so interrupts must be off)
      and they need to be acknowledged on the PIC (see below).
      An external interrupt handler cannot sleep. */
-  external = frame->vec_no >= 0x20 && frame->vec_no < 0x30;
+  bool external = frame->vec_no >= 0x20 && frame->vec_no < 0x30;
   if (external) {
     ASSERT(intr_get_level() == INTR_OFF);
     ASSERT(!intr_context());
 
-    in_external_intr = true;
+    in_external_intr = true;  // 每次外部中断的时候, 初始化一些标志变量
     yield_on_return = false;
   }
 
   /* Invoke the interrupt's handler. */
-  handler = intr_handlers[frame->vec_no];
-  if (handler != NULL)
-    handler(frame);
-  else if (frame->vec_no == 0x27 || frame->vec_no == 0x2f) {
+  intr_handler_func *handler = intr_handlers[frame->vec_no];
+  if (handler != NULL) {
+    handler(frame);  // call timer_interrupt
+  } else if (frame->vec_no == 0x27 || frame->vec_no == 0x2f) {
     /* There is no handler, but this interrupt can trigger
        spuriously due to a hardware fault or hardware race
        condition.  Ignore it. */
-  } else
+  } else {
     unexpected_interrupt(frame);
+  }
 
   /* Complete the processing of an external interrupt. */
   if (external) {

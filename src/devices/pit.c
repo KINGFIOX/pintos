@@ -45,15 +45,13 @@
 
    FREQUENCY is the number of periods per second, in Hz. */
 void pit_configure_channel(int channel, int mode, int frequency) {
-  uint16_t count;
-  enum intr_level old_level;
-
   ASSERT(channel == 0 || channel == 2);
   ASSERT(mode == 2 || mode == 3);
 
   /* Convert FREQUENCY to a PIT counter value.  The PIT has a
      clock that runs at PIT_HZ cycles per second.  We must
      translate FREQUENCY into a number of these cycles. */
+  uint16_t count;
   if (frequency < 19) {
     /* Frequency is too low: the quotient would overflow the
        16-bit counter.  Force it to 0, which the PIT treats as
@@ -67,11 +65,12 @@ void pit_configure_channel(int channel, int mode, int frequency) {
        a 596.590 kHz timer, approximately.  (This timer rate is
        probably too fast to be useful anyhow.) */
     count = 2;
-  } else
+  } else {
     count = (PIT_HZ + frequency / 2) / frequency;
+  }
 
   /* Configure the PIT mode and load its counters. */
-  old_level = intr_disable();
+  enum intr_level old_level = intr_disable();
   outb(PIT_PORT_CONTROL, (channel << 6) | 0x30 | (mode << 1));
   outb(PIT_PORT_COUNTER(channel), count);
   outb(PIT_PORT_COUNTER(channel), count >> 8);

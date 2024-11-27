@@ -11,14 +11,14 @@
    An empty list looks like this:
 
                       +------+     +------+
-                  <---| head |<--->| tail |--->
+             NULL <---| head |<--->| tail |---> NULL
                       +------+     +------+
 
    A list with two elements in it looks like this:
 
-        +------+     +-------+     +-------+     +------+
-    <---| head |<--->|   1   |<--->|   2   |<--->| tail |<--->
-        +------+     +-------+     +-------+     +------+
+         +------+     +-------+     +-------+     +------+
+NULL <---| head |<--->|   1   |<--->|   2   |<--->| tail |<---> NULL
+         +------+     +-------+     +-------+     +------+
 
    The symmetry of this arrangement eliminates lots of special
    cases in list processing.  For example, take a look at

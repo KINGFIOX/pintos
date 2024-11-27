@@ -39,10 +39,8 @@ void timer_init(void) {
   intr_register_ext(0x20, timer_interrupt, "8254 Timer");
 }
 
-/** Calibrates loops_per_tick, used to implement brief delays. */
+/** Calibrates(标准) loops_per_tick, used to implement brief delays. */
 void timer_calibrate(void) {
-  unsigned high_bit, test_bit;
-
   ASSERT(intr_get_level() == INTR_ON);
   printf("Calibrating timer...  ");
 
@@ -55,9 +53,10 @@ void timer_calibrate(void) {
   }
 
   /* Refine the next 8 bits of loops_per_tick. */
-  high_bit = loops_per_tick;
-  for (test_bit = high_bit >> 1; test_bit != high_bit >> 10; test_bit >>= 1)
+  unsigned int high_bit = loops_per_tick;
+  for (unsigned int test_bit = high_bit >> 1; test_bit != high_bit >> 10; test_bit >>= 1) {
     if (!too_many_loops(high_bit | test_bit)) loops_per_tick |= test_bit;
+  }
 
   printf("%'" PRIu64 " loops/s.\n", (uint64_t)loops_per_tick * TIMER_FREQ);
 }
@@ -66,7 +65,7 @@ void timer_calibrate(void) {
 int64_t timer_ticks(void) {
   enum intr_level old_level = intr_disable();
   int64_t t = ticks;
-  intr_set_level(old_level);
+  intr_set_level(old_level);  // 恢复上面 disable 时的 intr 状态(old_level)
   return t;
 }
 

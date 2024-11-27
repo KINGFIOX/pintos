@@ -1,5 +1,7 @@
 #include "threads/loader.h"
 
+.globl intr_handler
+
         .text
 
 /* Main interrupt entry point.
@@ -26,14 +28,33 @@ intr_entry:
         
 	/* Set up kernel environment. */
 	cld			/* String instructions go upward. */
-	mov $SEL_KDSEG, %eax	/* Initialize segment registers. */
+	mov $SEL_KDSEG, %eax	/* Initialize segment registers. (kernel 的 data segment) */
 	mov %eax, %ds
 	mov %eax, %es
+# (76) uint16_t ss;             # 硬件压入的
+# (72) void *esp;
+# (68) uint32_t eflags;
+# (64) uint16_t cs;
+# (60) void (*eip)(void);
+# (56) void *frame_pointer;     # intr<num>_stub 中压入的, 看下面
+# (52) error_code;
+# (48) vec_no;
+# (44) ds;
+# (40) es;
+# (36) fs;
+# (32) gs;
+# (28) eax;
+# (24) ecx;
+# (20) edx;
+# (16) ebx;
+# (12) esp_dummy;
+# ( 8) ebp;
+# ( 4) esi;
+# ( 0) edi;
 	leal 56(%esp), %ebp	/* Set up frame pointer. */
 
 	/* Call interrupt handler. */
 	pushl %esp
-.globl intr_handler
 	call intr_handler
 	addl $4, %esp
 .endfunc
@@ -111,11 +132,11 @@ intr_stubs:
    or `REAL', if the CPU pushes an error code for us.*/
 /* such as
         * .text
-        * .func intr00_stub
-        * intr00_stub:
-        *       pushl (%esp); // REAL expands here
-        *       movl %ebp, 4(%esp);
-        *       push $0x00;
+        * .func intr20_stub
+        * intr20_stub:
+        *       pushl %ebp; // zero expand here
+        *       pushl $0; // error_code
+        *       push $0x20; // vec_no
         *       jmp intr_entry;
         * .endfunc
         * .data
