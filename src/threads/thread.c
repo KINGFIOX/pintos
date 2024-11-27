@@ -54,7 +54,7 @@ static long long user_ticks;   /**< # of timer ticks in user programs. */
 
 /** Scheduling. */
 #define TIME_SLICE 4              /**< # of timer ticks to give each thread. */
-static unsigned int thread_ticks; /**< # of timer ticks since last yield. */
+static unsigned int thread_ticks; /**< # of timer ticks since last yield.(用于标记, 当前处理器上的线程, 他运行了多长时间, reset at thread_schedule_tail) */
 
 /** If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
@@ -120,7 +120,7 @@ void thread_start(void) {
 void thread_tick(void) {
   struct thread *t = thread_current();
 
-  /* Update statistics. */
+  /* Update statistics. */  // 更新统计数据
   if (t == idle_thread) {
     idle_ticks++;
   }
@@ -133,7 +133,7 @@ void thread_tick(void) {
     kernel_ticks++;
   }
 
-  /* Enforce preemption.(抢占) */
+  /* Enforce preemption.(抢占) */  // 时间片到了, 标记当前进程可以被抢占了
   if (++thread_ticks >= TIME_SLICE) intr_yield_on_return();
 }
 
