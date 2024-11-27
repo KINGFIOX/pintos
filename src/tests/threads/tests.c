@@ -42,18 +42,19 @@ static const struct test tests[] = {
 static const char *test_name;
 
 /** Runs the test named NAME. */
-void run_test(const char *name) {
+int run_test(const char *name) {
   const struct test *t;
 
-  for (t = tests; t < tests + sizeof tests / sizeof *tests; t++)
+  for (t = tests; t < tests + sizeof tests / sizeof *tests; t++) {
     if (!strcmp(name, t->name)) {
       test_name = name;
       msg("begin");
       t->function();
       msg("end");
-      return;
+      return 0;
     }
-  PANIC("no test named \"%s\"", name);
+  }
+  return -ERT_NOT_FOUND;  //   PANIC("no test named \"%s\"", name);
 }
 
 /** Prints FORMAT as if with printf(),

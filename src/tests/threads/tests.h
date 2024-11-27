@@ -1,7 +1,8 @@
 #ifndef TESTS_THREADS_TESTS_H
 #define TESTS_THREADS_TESTS_H
 
-void run_test(const char *);
+#define ERT_NOT_FOUND 1  // error run test
+int run_test(const char *);
 
 typedef void test_func(void);
 
