@@ -180,7 +180,7 @@ static void interactive(char *argv[]) {
   while (true) {
     printf("pkuos> ");
     char buf[128] = {};
-    int len = readline(buf, sizeof(buf));
+    int len = readline(buf, sizeof buf);
     if (len == 0) continue;
     int argc = tokenize(buf, argv);
     if (argv[0] != NULL) run_interactive(argv);

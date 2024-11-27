@@ -53,8 +53,8 @@ static long long kernel_ticks; /**< # of timer ticks in kernel threads. */
 static long long user_ticks;   /**< # of timer ticks in user programs. */
 
 /** Scheduling. */
-#define TIME_SLICE 4          /**< # of timer ticks to give each thread. */
-static unsigned thread_ticks; /**< # of timer ticks since last yield. */
+#define TIME_SLICE 4              /**< # of timer ticks to give each thread. */
+static unsigned int thread_ticks; /**< # of timer ticks since last yield. */
 
 /** If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
@@ -121,15 +121,19 @@ void thread_tick(void) {
   struct thread *t = thread_current();
 
   /* Update statistics. */
-  if (t == idle_thread) idle_ticks++;
+  if (t == idle_thread) {
+    idle_ticks++;
+  }
 #ifdef USERPROG
-  else if (t->pagedir != NULL)
+  else if (t->pagedir != NULL) {
     user_ticks++;
+  }
 #endif
-  else
+  else {
     kernel_ticks++;
+  }
 
-  /* Enforce preemption. */
+  /* Enforce preemption.(抢占) */
   if (++thread_ticks >= TIME_SLICE) intr_yield_on_return();
 }
 

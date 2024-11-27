@@ -82,6 +82,10 @@ void shutdown_power_off(void) {
   filesys_done();
 #endif
 
+  // Timer: 866 ticks
+  // Thread: 839 idle ticks, 27 kernel ticks, 0 user ticks
+  // Console: 446 characters output
+  // Keyboard: 0 keys pressed
   print_stats();
 
   printf("Powering off...\n");
