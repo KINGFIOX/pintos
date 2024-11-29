@@ -14,7 +14,7 @@ define offsetof
     set $rc = (char*)&((struct $arg0 *)0)->$arg1 - (char*)0
 end
 
-define list_entry
+define container_of
     offsetof $arg1 $arg2
     set $rc = ((struct $arg1 *) ((uint8_t *) ($arg0) - $rc))
 end
@@ -25,7 +25,7 @@ define dumplist
     set $e = $list->head.next
     set $i = 0
     while $e != &(($arg0).tail)
-        list_entry $e $arg1 $arg2
+        container_of $e $arg1 $arg2
         set $l = $rc
         printf "pintos-debug: dumplist #%d: %p ", $i++, $l
         output *$l
@@ -69,7 +69,7 @@ define btthreadlist
     set $list = $arg0
     set $e = $list->head.next
     while $e != &(($arg0).tail)
-        list_entry $e thread $arg1
+        container_of $e thread $arg1
         printf "pintos-debug: dumping backtrace of thread '%s' @%p\n", \
                 ((struct thread*)$rc)->name, $rc
         btthread $rc

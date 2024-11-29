@@ -132,7 +132,7 @@ void *malloc(size_t size) {
   }
 
   /* Get a block from free list and return it. */
-  struct block *b = list_entry(list_pop_front(&d->free_list), struct block, free_elem);
+  struct block *b = container_of(list_pop_front(&d->free_list), struct block, free_elem);
   struct arena *a = block_to_arena(b);
   a->free_cnt--;
   lock_release(&d->lock);

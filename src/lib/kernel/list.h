@@ -7,7 +7,7 @@
    use of dynamically allocated memory.  Instead, each structure
    that is a potential list element must embed a struct list_elem
    member.  All of the list functions operate on these `struct
-   list_elem's.  The list_entry macro allows conversion from a
+   list_elem's.  The container_of macro allows conversion from a
    struct list_elem back to a structure object that contains it.
 
    For example, suppose there is a needed for a list of `struct
@@ -37,7 +37,7 @@
       for (e = list_begin (&foo_list); e != list_end (&foo_list);
            e = list_next (e))
         {
-          struct foo *f = list_entry (e, struct foo, elem);
+          struct foo *f = container_of (e, struct foo, elem);
           ...do something with f...
         }
 
@@ -103,7 +103,7 @@ struct list {
    name of the outer structure STRUCT and the member name MEMBER
    of the list element.  See the big comment at the top of the
    file for an example. */
-#define list_entry(LIST_ELEM, STRUCT, MEMBER) ((STRUCT *)((uint8_t *)&(LIST_ELEM)->next - offsetof(STRUCT, MEMBER.next)))
+// #define container_of(LIST_ELEM, STRUCT, MEMBER) ((STRUCT *)((uint8_t *)&(LIST_ELEM)->next - offsetof(STRUCT, MEMBER.next)))
 
 /** List initialization.
 

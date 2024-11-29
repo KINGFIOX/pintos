@@ -55,9 +55,9 @@ void test(void) {
 
       /* Verify correct minimum and maximum elements. */
       e = list_min(&list, value_less, NULL);
-      ASSERT(size ? list_entry(e, struct value, elem)->value == 0 : e == list_begin(&list));
+      ASSERT(size ? container_of(e, struct value, elem)->value == 0 : e == list_begin(&list));
       e = list_max(&list, value_less, NULL);
-      ASSERT(size ? list_entry(e, struct value, elem)->value == size - 1 : e == list_begin(&list));
+      ASSERT(size ? container_of(e, struct value, elem)->value == size - 1 : e == list_begin(&list));
 
       /* Sort and verify list. */
       list_sort(&list, value_less, NULL);
@@ -77,7 +77,7 @@ void test(void) {
       /* Duplicate some items, uniquify, and verify. */
       ofs = size;
       for (e = list_begin(&list); e != list_end(&list); e = list_next(e)) {
-        struct value *v = list_entry(e, struct value, elem);
+        struct value *v = container_of(e, struct value, elem);
         int copies = random_ulong() % 4;
         while (copies-- > 0) {
           values[ofs].value = v->value;
@@ -109,8 +109,8 @@ static void shuffle(struct value *array, size_t cnt) {
 /** Returns true if value A is less than value B, false
    otherwise. */
 static bool value_less(const struct list_elem *a_, const struct list_elem *b_, void *aux UNUSED) {
-  const struct value *a = list_entry(a_, struct value, elem);
-  const struct value *b = list_entry(b_, struct value, elem);
+  const struct value *a = container_of(a_, struct value, elem);
+  const struct value *b = container_of(b_, struct value, elem);
 
   return a->value < b->value;
 }
@@ -122,7 +122,7 @@ static void verify_list_fwd(struct list *list, int size) {
   int i;
 
   for (i = 0, e = list_begin(list); i < size && e != list_end(list); i++, e = list_next(e)) {
-    struct value *v = list_entry(e, struct value, elem);
+    struct value *v = container_of(e, struct value, elem);
     ASSERT(i == v->value);
   }
   ASSERT(i == size);
@@ -136,7 +136,7 @@ static void verify_list_bkwd(struct list *list, int size) {
   int i;
 
   for (i = 0, e = list_rbegin(list); i < size && e != list_rend(list); i++, e = list_prev(e)) {
-    struct value *v = list_entry(e, struct value, elem);
+    struct value *v = container_of(e, struct value, elem);
     ASSERT(i == v->value);
   }
   ASSERT(i == size);

@@ -98,7 +98,7 @@ struct inode *inode_open(block_sector_t sector) {
 
   /* Check whether this inode is already open. */
   for (e = list_begin(&open_inodes); e != list_end(&open_inodes); e = list_next(e)) {
-    inode = list_entry(e, struct inode, elem);
+    inode = container_of(e, struct inode, elem);
     if (inode->sector == sector) {
       inode_reopen(inode);
       return inode;
