@@ -11,9 +11,9 @@
    This array points to each of the interrupt stub entry points
    so that intr_init() can easily find them. */
 typedef void intr_stub_func(void);
-extern intr_stub_func *intr_stubs[256];
+extern intr_stub_func *intr_stubs[256];  // defined in threads/intr-stubs.S
 
 /** Interrupt return path. */
-void intr_exit(void);
+void intr_exit(void);  // defined in threads/intr-stubs.S
 
 #endif /**< threads/intr-stubs.h */

@@ -358,6 +358,7 @@ static void unexpected_interrupt(const struct intr_frame *f) {
      unexpected interrupt the first time and fairly often after
      that, but one that occurs many times will not overwhelm the
      console. */
+  // 判断是不是 2 的某次幂: (n & (n-1)) == 0
   if ((n & (n - 1)) == 0) printf("Unexpected interrupt %#04x (%s)\n", f->vec_no, intr_names[f->vec_no]);
 }
 

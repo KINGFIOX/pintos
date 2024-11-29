@@ -46,6 +46,9 @@ static inline uint32_t inl(uint16_t port) {
    and stores them into the buffer starting at ADDR. */
 static inline void insl(uint16_t port, void *addr, size_t cnt) {
   /* See [IA32-v2a] "INS". */
+  // NOTE: "+D"(addr) : di <- addr.  // D : edi
+  // "+c(cnt)" : cx <- cnt
+  // "d"(port) : dx <- port // d : edx
   asm volatile("rep insl" : "+D"(addr), "+c"(cnt) : "d"(port) : "memory");
 }
 

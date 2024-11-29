@@ -4,6 +4,8 @@
 #include <list.h>
 #include <stdbool.h>
 
+#include "kernel/list.h"
+
 /** A counting semaphore. */
 struct semaphore {
   unsigned value;      /**< Current value. */

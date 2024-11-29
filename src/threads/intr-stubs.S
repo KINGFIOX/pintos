@@ -140,7 +140,7 @@ intr_stubs:
         *       jmp intr_entry;
         * .endfunc
         * .data
-        * .long intr00_stub;
+        * .long intr00_stub;  // 这个才是 intr_stubs 中的元素(成员)
         */
 #define STUB(NUMBER, TYPE)                      \
 	.text;                                  \

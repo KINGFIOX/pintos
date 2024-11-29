@@ -286,7 +286,7 @@ void thread_foreach(thread_action_func *func, void *aux) {
   ASSERT(intr_get_level() == INTR_OFF);
 
   for (e = list_begin(&all_list); e != list_end(&all_list); e = list_next(e)) {
-    struct thread *t = list_entry(e, struct thread, allelem);
+    struct thread *t = container_of(e, struct thread, allelem);
     func(t, aux);
   }
 }
@@ -418,7 +418,7 @@ static struct thread *next_thread_to_run(void) {
   if (list_empty(&ready_list))
     return idle_thread;
   else
-    return list_entry(list_pop_front(&ready_list), struct thread, elem);
+    return container_of(list_pop_front(&ready_list), struct thread, elem);
 }
 
 /** Completes a thread switch by activating the new thread's page
