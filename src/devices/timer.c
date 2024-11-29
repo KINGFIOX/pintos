@@ -33,6 +33,16 @@ static void busy_wait(int64_t loops);
 static void real_time_sleep(int64_t num, int32_t denom);
 static void real_time_delay(int64_t num, int32_t denom);
 
+static struct lock timer_sleep_lock;
+static struct list timer_sleep_list;
+
+struct timer_sleep {
+  struct list_elem elem;
+  int64_t start;
+  int64_t ticks;
+  struct semaphore sema;
+};
+
 /* ---------- ----------  ---------- ---------- */
 
 /** Sets up the timer to interrupt TIMER_FREQ times per second,
@@ -40,6 +50,8 @@ static void real_time_delay(int64_t num, int32_t denom);
 void timer_init(void) {
   pit_configure_channel(0, 2, TIMER_FREQ);
   intr_register_ext(0x20, timer_interrupt, "8254 Timer");
+  lock_init(&timer_sleep_lock);
+  list_init(&timer_sleep_list);
 }
 
 /** Calibrates(标准) loops_per_tick, used to implement brief delays. */
@@ -85,7 +97,18 @@ void timer_sleep(int64_t ticks) {
 
   ASSERT(intr_get_level() == INTR_ON);
 
-  while (timer_elapsed(start) < ticks) thread_yield();
+  struct timer_sleep timer_sleep_elem;
+  timer_sleep_elem.start = start;
+  timer_sleep_elem.ticks = ticks;
+  sema_init(&timer_sleep_elem.sema, 0);
+
+  lock_acquire(&timer_sleep_lock);
+  list_push_back(&timer_sleep_list, &timer_sleep_elem.elem);
+  lock_release(&timer_sleep_lock);
+
+  sema_down(&timer_sleep_elem.sema);
+
+  //   while (timer_elapsed(start) < ticks) thread_yield();
 }
 
 /* ---------- ---------- ---------- ---------- */
@@ -132,9 +155,20 @@ void timer_ndelay(int64_t ns) { real_time_delay(ns, 1000 * 1000 * 1000); }
 /** Prints timer statistics. */
 void timer_print_stats(void) { printf("Timer: %" PRId64 " ticks\n", timer_ticks()); }
 
+static void timer_sleep_tick(void) {
+  for (struct list_elem *e = list_begin(&timer_sleep_list); e != list_end(&timer_sleep_list); e = list_next(e)) {
+    struct timer_sleep *timer_sleep_elem = container_of(e, struct timer_sleep, elem);
+    if (timer_elapsed(timer_sleep_elem->start) >= timer_sleep_elem->ticks) {
+      sema_up(&timer_sleep_elem->sema);
+      list_remove(e);
+    }
+  }
+}
+
 /** Timer interrupt handler. */
 static void timer_interrupt(struct intr_frame *args UNUSED) {
   ticks++;
+  timer_sleep_tick();
   thread_tick();
 }
 
