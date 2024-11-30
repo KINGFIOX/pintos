@@ -42,6 +42,9 @@ void cond_wait(struct condition *, struct lock *);
 void cond_signal(struct condition *, struct lock *);
 void cond_broadcast(struct condition *, struct lock *);
 
+void dump_sema_waiters(const struct list *waiters, int indent);
+void dump_cond_waiters(const struct list *waiters, int indent);
+
 /** Optimization barrier.
 
    The compiler will not reorder operations across an

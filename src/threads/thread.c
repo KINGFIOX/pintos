@@ -209,6 +209,25 @@ void thread_block(void) {
   schedule();
 }
 
+void dump_thread(const struct thread *t, int indent) {
+  // clang-format off
+  static const char *status_name[] = {
+      [THREAD_RUNNING] = "THREAD_RUNNING",
+      [THREAD_READY] = "THREAD_READY",
+      [THREAD_BLOCKED] = "THREAD_BLOCKED",
+      [THREAD_DYING] = "THREAD_DYING",
+  };
+  // clang-format on
+
+  printf("%*s{\n", indent, "");
+  printf("%*s  tid: %d,\n", indent, "", t->tid);
+  printf("%*s  name: %s,\n", indent, "", t->name);
+  printf("%*s  status: %s,\n", indent, "", status_name[t->status]);
+  printf("%*s  priority: %d,\n", indent, "", t->priority);
+  printf("%*s  before_donated_priority: %d,\n", indent, "", t->before_donated_priority);
+  printf("%*s}\n", indent, "");
+}
+
 /** Transitions a blocked thread T to the ready-to-run state.
    This is an error if T is not blocked.  (Use thread_yield() to
    make the running thread ready.)
@@ -301,7 +320,7 @@ void thread_foreach(thread_action_func *func, void *aux) {
   }
 }
 
-/** Sets the current thread's priority to NEW_PRIORITY. (主动调度的) */
+/** Sets the current thread's priority to NEW_PRIORITY. (主动调用的) */
 int thread_set_priority(int new_priority) {
   struct thread *cur = thread_current();
 
