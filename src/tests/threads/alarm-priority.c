@@ -18,7 +18,7 @@ void test_alarm_priority(void) {
   int i;
 
   /* This test does not work with the MLFQS. */
-  ASSERT(!thread_mlfqs);
+  ASSERT(!thread_mlfqs());
 
   wake_time = timer_ticks() + 5 * TIMER_FREQ;
   sema_init(&wait_sema, 0);

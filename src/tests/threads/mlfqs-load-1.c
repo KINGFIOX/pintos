@@ -20,7 +20,7 @@ void test_mlfqs_load_1(void) {
   int elapsed;
   int load_avg;
 
-  ASSERT(thread_mlfqs);
+  ASSERT(thread_mlfqs());
 
   msg("spinning for up to 45 seconds, please wait...");
 

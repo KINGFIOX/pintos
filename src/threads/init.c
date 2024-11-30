@@ -235,6 +235,13 @@ static void paging_init(void) {
 
 /* ---------- ---------- ---------- ---------- command line ---------- ---------- ---------- ---------- */
 
+/** If false (default), use round-robin scheduler.
+   If true, use multi-level feedback queue scheduler.
+   Controlled by kernel command-line option "-o mlfqs". */
+static bool thread_mlfqs_;
+
+bool thread_mlfqs(void) { return thread_mlfqs_; }
+
 /** Breaks the kernel command line into words and returns them as
    an argv-like array. */
 static char **read_command_line(int argc, char *p) {
@@ -293,7 +300,7 @@ static char **parse_options(char **argv) {
     else if (!strcmp(name, "-rs")) {
       random_init(atoi(value));
     } else if (!strcmp(name, "-mlfqs")) {
-      thread_mlfqs = true;
+      thread_mlfqs_ = true;
     }
 #ifdef USERPROG
     else if (!strcmp(name, "-ul")) {
