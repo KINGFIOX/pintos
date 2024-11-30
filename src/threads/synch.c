@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "kernel/list.h"
 #include "stddef.h"
 #include "threads/interrupt.h"
 #include "threads/thread.h"
@@ -194,6 +195,83 @@ void lock_init(struct lock *lock) {
   sema_init(&lock->semaphore, 1);
 }
 
+struct buffer_elem {
+  struct list_elem elem;
+  struct thread *thread;
+};
+
+static struct list *elem_in_list(struct list_elem *e) {
+  while (e->prev != NULL) {
+    e = e->prev;
+  }
+  return container_of(e, struct list, head);
+}
+
+static bool contains_holder(struct list *buffer, struct thread *holder) {
+  for (struct list_elem *e = list_begin(buffer); e != list_end(buffer); e = list_next(e)) {
+    if (e == &holder->elem) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static void __update_priority_r(struct thread *holder, int priority, struct list *buffer) {
+  if (contains_holder(buffer, holder)) {
+    return;  // already in buffer list
+  }
+  if (holder->priority < priority) {  // updated
+    holder->priority = priority;
+    if (holder->status == THREAD_BLOCKED) {                                       // recursively update
+      struct list *waiters = elem_in_list(&holder->elem);                         // get the header of waiters list
+      struct semaphore *sema = container_of(waiters, struct semaphore, waiters);  // get the semaphore
+      struct lock *lock = container_of(sema, struct lock, semaphore);             // get the lock
+      struct thread *next_holder = lock->holder;                                  // get the next holder
+
+      struct buffer_elem be;  // push next holder to buffer list
+      be.thread = next_holder;
+      list_push_back(buffer, &be.elem);
+      __update_priority_r(next_holder, priority, buffer);
+      list_pop_back(buffer);
+    }
+  }
+}
+
+static void priority_donate(struct thread *holder, int priority) {
+  struct list buffer;  // init buffer list
+  list_init(&buffer);
+  struct buffer_elem be;  // push holder to buffer list
+  be.thread = holder;
+  list_push_back(&buffer, &be.elem);
+  __update_priority_r(holder, priority, &buffer);
+  list_pop_back(&buffer);
+}
+
+static bool contains_lock(struct thread *cur, struct lock *lck) {
+  for (struct list_elem *e = list_begin(&cur->locks); e != list_end(&cur->locks); e = list_next(e)) {
+    if (e == &lck->elem) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static void thread_push_lock(struct thread *cur, struct lock *lck) {
+  ASSERT(cur != NULL);
+  ASSERT(lck != NULL);
+  ASSERT(!contains_lock(cur, lck));
+  list_push_back(&cur->locks, &lck->elem);
+}
+
+static void thread_pop_lock(struct thread *cur, struct lock *lck) {
+  ASSERT(cur != NULL);
+  ASSERT(lck != NULL);
+  ASSERT(contains_lock(cur, lck));
+  list_remove(&lck->elem);
+  lck->elem.next = NULL;
+  lck->elem.prev = NULL;
+}
+
 /** Acquires LOCK, sleeping until it becomes available if
    necessary.  The lock must not already be held by the current
    thread.
@@ -212,13 +290,14 @@ void lock_acquire(struct lock *lock) {
 
   if (holder != NULL) {                      // 🔐 被占用
     if (holder->priority < cur->priority) {  // 优先级反转
-      holder->priority = cur->priority;
+      priority_donate(holder, cur->priority);
+      // holder->priority = cur->priority;
     }
   }
 
   sema_down(&lock->semaphore);  // ---------- 进入临界区 ----------
   lock->holder = thread_current();
-  list_push_back(&cur->locks, &lock->elem);
+  thread_push_lock(cur, lock);
 }
 
 /** Tries to acquires LOCK and returns true if successful or false
@@ -276,11 +355,10 @@ void lock_release(struct lock *lock) {
   ASSERT(lock != NULL);
   ASSERT(lock_held_by_current_thread(lock));
 
-  list_remove(&lock->elem);  // thread 不持有 🔐
-
+  thread_pop_lock(lock->holder, lock);
   int next_pri = next_priority(lock, lock->holder->original_priority);
   lock->holder->priority = next_pri;
-  lock->holder = NULL;
+  lock->holder = NULL;        // clear holder
   sema_up(&lock->semaphore);  // ---------- 退出临界区 ----------
 }
 
