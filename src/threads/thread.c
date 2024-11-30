@@ -300,24 +300,27 @@ void thread_foreach(thread_action_func *func, void *aux) {
   }
 }
 
-/** Sets the current thread's priority to NEW_PRIORITY. */
+/** Sets the current thread's priority to NEW_PRIORITY. (主动调度的) */
 int thread_set_priority(int new_priority) {
   struct thread *cur = thread_current();
 
   int old_priority = cur->priority;
-  if (cur->priority == cur->original_priority) {  // 优先级捐赠没有发生的情况
-    cur->original_priority = new_priority;
+  cur->before_donated_priority = new_priority;
+  if (cur->donated) {
+    if (old_priority < new_priority) {
+      cur->priority = new_priority;
+    }
+  } else {
     cur->priority = new_priority;
     if (new_priority < old_priority) {
       if (!list_empty(&ready_list)) {
         struct thread *first = container_of(list_max(&ready_list, ready_list_less_func, NULL), struct thread, elem);
-        if (cur != first && cur->priority < first->priority) {
+        ASSERT(cur != first);  // 不可能: 既 RUNNING 又 READY
+        if (cur->priority < first->priority) {
           thread_yield();
         }
       }
     }
-  } else {  // priority donate happened
-    cur->original_priority = new_priority;
   }
   return old_priority;
 }
@@ -419,7 +422,7 @@ static void init_thread(struct thread *t, const char *name, int priority) {
   strlcpy(t->name, name, sizeof t->name);
   t->stack = (uint8_t *)t + PGSIZE;
   t->priority = priority;
-  t->original_priority = priority;
+  t->before_donated_priority = priority;
   t->magic = THREAD_MAGIC;
   list_init(&t->locks);
 

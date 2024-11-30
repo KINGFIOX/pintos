@@ -101,7 +101,8 @@ struct thread {
   /* Owned by thread.c. */
   unsigned magic; /**< Detects stack overflow. */
 
-  int original_priority; /**< Original priority. */
+  int before_donated_priority; /**< before donated priority. */
+  bool donated;                /**< Whether the thread is donated. */
   struct list locks;
 };
 
