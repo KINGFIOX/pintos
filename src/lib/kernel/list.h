@@ -167,7 +167,7 @@ void list_insert_ordered(struct list *, struct list_elem *, list_less_func *, vo
 void list_unique(struct list *, struct list *duplicates, list_less_func *, void *aux);
 
 /** Max and min. */
-struct list_elem *list_max(struct list *, list_less_func *, void *aux);
-struct list_elem *list_min(struct list *, list_less_func *, void *aux);
+struct list_elem *list_max(struct list *list, list_less_func *less, void *aux);
+struct list_elem *list_min(struct list *list, list_less_func *less, void *aux);
 
 #endif /**< lib/kernel/list.h */

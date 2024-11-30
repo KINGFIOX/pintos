@@ -409,16 +409,32 @@ static void *alloc_frame(struct thread *t, size_t size) {  // 分配的是: 高�
   return t->stack;
 }
 
+static bool ready_list_less_func(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED) {
+  struct thread *t1 = container_of(a, struct thread, elem);
+  struct thread *t2 = container_of(b, struct thread, elem);
+  return t1->priority < t2->priority;
+}
+
+static struct thread *get_max_priority_thread(struct list *list) {
+  struct list_elem *elem = list_max(list, ready_list_less_func, NULL);
+  ASSERT(elem != NULL);
+  list_remove(elem);
+  elem->next = NULL;
+  elem->prev = NULL;
+  return container_of(elem, struct thread, elem);
+}
+
 /** Chooses and returns the next thread to be scheduled.  Should
    return a thread from the run queue, unless the run queue is
    empty.  (If the running thread can continue running, then it
    will be in the run queue.)  If the run queue is empty, return
    idle_thread. */
 static struct thread *next_thread_to_run(void) {
-  if (list_empty(&ready_list))
+  if (list_empty(&ready_list)) {
     return idle_thread;
-  else
-    return container_of(list_pop_front(&ready_list), struct thread, elem);
+  } else {
+    return get_max_priority_thread(&ready_list);
+  }
 }
 
 /** Completes a thread switch by activating the new thread's page
