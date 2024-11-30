@@ -100,6 +100,9 @@ struct thread {
 
   /* Owned by thread.c. */
   unsigned magic; /**< Detects stack overflow. */
+
+  int original_priority; /**< Original priority. */
+  struct list locks;
 };
 
 /** If false (default), use round-robin scheduler.
