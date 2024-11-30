@@ -96,14 +96,14 @@ bool sema_try_down(struct semaphore *sema) {
   return success;
 }
 
-static bool waiters_less_func(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED) {
+static bool sema_less_func(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED) {
   struct thread *t1 = container_of(a, struct thread, elem);
   struct thread *t2 = container_of(b, struct thread, elem);
   return t1->priority < t2->priority;
 }
 
-static struct thread *pop_max_priority_thread(struct list *list) {
-  struct list_elem *elem = list_max(list, waiters_less_func, NULL);
+static struct thread *sema_pop_max_priority_thread(struct list *list) {
+  struct list_elem *elem = list_max(list, sema_less_func, NULL);
   ASSERT(elem != NULL);
   list_remove(elem);
   elem->next = NULL;
@@ -118,7 +118,8 @@ static void __sema_up(struct semaphore *sema) {
 
   old_level = intr_disable();
   if (!list_empty(&sema->waiters)) {
-    struct thread *t = pop_max_priority_thread(&sema->waiters);
+    struct thread *t = sema_pop_max_priority_thread(&sema->waiters);
+    ASSERT(t != NULL);
     thread_unblock(t);
   }
   sema->value++;
@@ -449,6 +450,27 @@ void dump_cond_waiters(const struct list *waiters, int indent) {
   printf("%*s},\n", indent, "");
 }
 
+static bool condvar_less_func(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED) {
+  struct semaphore_elem *sema_a = container_of(a, struct semaphore_elem, elem);  // 根据 dump 的信息, 一个 sema 的 waiters 只有一个元素
+  struct semaphore_elem *sema_b = container_of(b, struct semaphore_elem, elem);
+  ASSERT(list_size(&sema_a->semaphore.waiters) == 1);
+  ASSERT(list_size(&sema_b->semaphore.waiters) == 1);
+  struct thread *t_a = container_of(list_front(&sema_a->semaphore.waiters), struct thread, elem);
+  ASSERT(t_a != NULL);
+  struct thread *t_b = container_of(list_front(&sema_b->semaphore.waiters), struct thread, elem);
+  ASSERT(t_b != NULL);
+  return t_a->priority < t_b->priority;
+}
+
+static struct semaphore_elem *condvar_pop_max_priority_thread(struct list *list) {
+  struct list_elem *elem = list_max(list, condvar_less_func, NULL);
+  ASSERT(elem != NULL);
+  list_remove(elem);
+  elem->next = NULL;
+  elem->prev = NULL;
+  return container_of(elem, struct semaphore_elem, elem);
+}
+
 /** If any threads are waiting on COND (protected by LOCK), then
    this function signals one of them to wake up from its wait.
    LOCK must be held before calling this function.
@@ -463,10 +485,9 @@ void cond_signal(struct condition *cond, struct lock *lock UNUSED) {
   ASSERT(lock_held_by_current_thread(lock));
 
   if (!list_empty(&cond->waiters)) {
-    printf("---------- cond_signal ----------\n");
-    dump_cond_waiters(&cond->waiters, 0);
-    struct list_elem *elem = list_pop_front(&cond->waiters);
-    struct semaphore_elem *sema_elem = container_of(elem, struct semaphore_elem, elem);
+    // printf("---------- cond_signal ----------\n");
+    // dump_cond_waiters(&cond->waiters, 0);
+    struct semaphore_elem *sema_elem = condvar_pop_max_priority_thread(&cond->waiters);
     sema_up(&sema_elem->semaphore);
   }
 }
