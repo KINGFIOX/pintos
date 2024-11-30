@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "devices/timer.h"
 #include "kernel/list.h"
 #include "threads/flags.h"
 #include "threads/interrupt.h"
@@ -343,6 +344,15 @@ int thread_get_load_avg(void) {
   return 0;
 }
 
+static int64_t recent_cpu(void) {
+  static int64_t _data = 0;
+  enum intr_level old_level;
+  old_level = intr_disable();
+  int64_t ret = _data++;
+  intr_set_level(old_level);
+  return ret;
+}
+
 /** Returns 100 times the current thread's recent_cpu value. */
 int thread_get_recent_cpu(void) {
   /* Not yet implemented. */
@@ -425,6 +435,7 @@ static void init_thread(struct thread *t, const char *name, int priority) {
   t->before_donated_priority = priority;
   t->magic = THREAD_MAGIC;
   list_init(&t->locks);
+  t->recent_cpu = recent_cpu();
 
   old_level = intr_disable();              // get previous interrupt level
   list_push_back(&all_list, &t->allelem);  // all_list.push_back(t->allelem)
@@ -445,7 +456,13 @@ static void *alloc_frame(struct thread *t, size_t size) {  // 分配的是: 高�
 static bool ready_list_less_func(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED) {
   struct thread *t1 = container_of(a, struct thread, elem);
   struct thread *t2 = container_of(b, struct thread, elem);
-  return t1->priority <= t2->priority;
+  ASSERT(t1 != t2);
+  if (t1->priority != t2->priority) {
+    return t1->priority < t2->priority;
+  } else {  // t1->priority == t2->priority
+    ASSERT(t1->recent_cpu != t2->recent_cpu);
+    return t1->recent_cpu > t2->recent_cpu;
+  }
 }
 
 static struct thread *pop_max_priority_thread(struct list *list) {
@@ -466,7 +483,9 @@ static struct thread *next_thread_to_run(void) {
   if (list_empty(&ready_list)) {
     return idle_thread;
   } else {
-    return pop_max_priority_thread(&ready_list);
+    struct thread *next_thread = pop_max_priority_thread(&ready_list);
+    next_thread->recent_cpu = recent_cpu();
+    return next_thread;
   }
 }
 

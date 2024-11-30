@@ -104,6 +104,8 @@ struct thread {
   int before_donated_priority; /**< before donated priority. */
   bool donated;                /**< Whether the thread is donated. */
   struct list locks;
+
+  int64_t recent_cpu; /**< Recent CPU time. */
 };
 
 /** If false (default), use round-robin scheduler.
