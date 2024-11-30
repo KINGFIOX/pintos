@@ -303,17 +303,21 @@ void thread_foreach(thread_action_func *func, void *aux) {
 /** Sets the current thread's priority to NEW_PRIORITY. */
 int thread_set_priority(int new_priority) {
   struct thread *cur = thread_current();
-  cur->original_priority = new_priority;
 
   int old_priority = cur->priority;
-  cur->priority = new_priority;
-  if (new_priority < old_priority) {
-    if (!list_empty(&ready_list)) {
-      struct thread *first = container_of(list_max(&ready_list, ready_list_less_func, NULL), struct thread, elem);
-      if (cur != first && cur->priority < first->priority) {
-        thread_yield();
+  if (cur->priority == cur->original_priority) {  // 优先级捐赠没有发生的情况
+    cur->original_priority = new_priority;
+    cur->priority = new_priority;
+    if (new_priority < old_priority) {
+      if (!list_empty(&ready_list)) {
+        struct thread *first = container_of(list_max(&ready_list, ready_list_less_func, NULL), struct thread, elem);
+        if (cur != first && cur->priority < first->priority) {
+          thread_yield();
+        }
       }
     }
+  } else {  // priority donate happened
+    cur->original_priority = new_priority;
   }
   return old_priority;
 }
