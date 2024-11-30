@@ -1,5 +1,7 @@
 KERNEL = ./src/threads/build/kernel.o
 
+.PHONY: gdb attach up start
+
 gdb:
 	gdb -x .gdbinit
 

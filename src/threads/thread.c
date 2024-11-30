@@ -72,6 +72,8 @@ static void *alloc_frame(struct thread *, size_t size);
 static void schedule(void);
 void thread_schedule_tail(struct thread *prev);
 static tid_t allocate_tid(void);
+static bool ready_list_less_func(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
+static struct thread *pop_max_priority_thread(struct list *list);  // 这个会破坏 list
 
 /** Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -272,7 +274,9 @@ void thread_yield(void) {
   ASSERT(!intr_context());
 
   old_level = intr_disable();
-  if (cur != idle_thread) list_push_back(&ready_list, &cur->elem);
+  if (cur != idle_thread) {
+    list_push_back(&ready_list, &cur->elem);
+  }
   cur->status = THREAD_READY;
   schedule();
   intr_set_level(old_level);
@@ -292,7 +296,20 @@ void thread_foreach(thread_action_func *func, void *aux) {
 }
 
 /** Sets the current thread's priority to NEW_PRIORITY. */
-void thread_set_priority(int new_priority) { thread_current()->priority = new_priority; }
+int thread_set_priority(int new_priority) {
+  struct thread *cur = thread_current();
+  int old_priority = cur->priority;
+  cur->priority = new_priority;
+  if (new_priority < old_priority) {
+    if (!list_empty(&ready_list)) {
+      struct thread *first = container_of(list_max(&ready_list, ready_list_less_func, NULL), struct thread, elem);
+      if (cur != first && cur->priority < first->priority) {
+        thread_yield();
+      }
+    }
+  }
+  return old_priority;
+}
 
 /** Returns the current thread's priority. */
 int thread_get_priority(void) { return thread_current()->priority; }
@@ -412,10 +429,10 @@ static void *alloc_frame(struct thread *t, size_t size) {  // 分配的是: 高�
 static bool ready_list_less_func(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED) {
   struct thread *t1 = container_of(a, struct thread, elem);
   struct thread *t2 = container_of(b, struct thread, elem);
-  return t1->priority < t2->priority;
+  return t1->priority <= t2->priority;
 }
 
-static struct thread *get_max_priority_thread(struct list *list) {
+static struct thread *pop_max_priority_thread(struct list *list) {
   struct list_elem *elem = list_max(list, ready_list_less_func, NULL);
   ASSERT(elem != NULL);
   list_remove(elem);
@@ -433,7 +450,7 @@ static struct thread *next_thread_to_run(void) {
   if (list_empty(&ready_list)) {
     return idle_thread;
   } else {
-    return get_max_priority_thread(&ready_list);
+    return pop_max_priority_thread(&ready_list);
   }
 }
 
