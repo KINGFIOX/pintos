@@ -429,6 +429,26 @@ void cond_wait(struct condition *cond, struct lock *lock) {
   lock_acquire(lock);
 }
 
+void dump_sema_waiters(const struct list *waiters, int indent) {
+  printf("%*ssema waiters (struct thread): {\n", indent, "");
+  for (struct list_elem *e = list_begin((struct list *)waiters); e != list_end((struct list *)waiters); e = list_next(e)) {
+    struct thread *t = container_of(e, struct thread, elem);
+    printf(" %*s[%d] = ", indent, "", t->tid);
+    dump_thread(t, indent + 1);
+  }
+  printf("%*s},\n", indent, "");
+}
+
+void dump_cond_waiters(const struct list *waiters, int indent) {
+  printf("%*scond waiters (struct semaphore_elem): {\n", indent, "");
+  for (struct list_elem *e = list_begin((struct list *)waiters); e != list_end((struct list *)waiters); e = list_next(e)) {
+    struct semaphore_elem *sema_elem = container_of(e, struct semaphore_elem, elem);
+    printf(" %*s[%d] = ", indent, "", sema_elem->semaphore.value);
+    dump_sema_waiters(&sema_elem->semaphore.waiters, indent + 1);
+  }
+  printf("%*s},\n", indent, "");
+}
+
 /** If any threads are waiting on COND (protected by LOCK), then
    this function signals one of them to wake up from its wait.
    LOCK must be held before calling this function.
@@ -443,6 +463,8 @@ void cond_signal(struct condition *cond, struct lock *lock UNUSED) {
   ASSERT(lock_held_by_current_thread(lock));
 
   if (!list_empty(&cond->waiters)) {
+    printf("---------- cond_signal ----------\n");
+    dump_cond_waiters(&cond->waiters, 0);
     struct list_elem *elem = list_pop_front(&cond->waiters);
     struct semaphore_elem *sema_elem = container_of(elem, struct semaphore_elem, elem);
     sema_up(&sema_elem->semaphore);
