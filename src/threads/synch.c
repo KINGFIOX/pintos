@@ -110,11 +110,7 @@ static struct thread *pop_max_priority_thread(struct list *list) {
   return container_of(elem, struct thread, elem);
 }
 
-/** Up or "V" operation on a semaphore.  Increments SEMA's value
-   and wakes up one thread of those waiting for SEMA, if any.
-
-   This function may be called from an interrupt handler. */
-void sema_up(struct semaphore *sema) {
+static void __sema_up(struct semaphore *sema) {
   enum intr_level old_level;
 
   ASSERT(sema != NULL);
@@ -126,6 +122,21 @@ void sema_up(struct semaphore *sema) {
   }
   sema->value++;
   intr_set_level(old_level);
+}
+
+void sema_up_intr(struct semaphore *sema) {
+  ASSERT(intr_context());
+  __sema_up(sema);
+}
+
+/** Up or "V" operation on a semaphore.  Increments SEMA's value
+   and wakes up one thread of those waiting for SEMA, if any.
+
+   This function may be called from an interrupt handler. */
+void sema_up(struct semaphore *sema) {
+  ASSERT(!intr_context());
+  __sema_up(sema);
+  thread_yield();
 }
 
 static void sema_test_helper(void *sema_);
@@ -232,6 +243,30 @@ bool lock_try_acquire(struct lock *lock) {
   return success;
 }
 
+static int max_priority_in_waiters(struct list *waiters) {
+  int max = PRI_MIN;
+  for (struct list_elem *e = list_begin(waiters); e != list_end(waiters); e = list_next(e)) {
+    struct thread *t = container_of(e, struct thread, elem);
+    if (t->priority > max) {
+      max = t->priority;
+    }
+  }
+  return max;
+}
+
+static int next_priority(struct lock *lock, int original_priority) {
+  int max = original_priority;
+  for (struct list_elem *e = list_begin(&lock->holder->locks); e != list_end(&lock->holder->locks); e = list_next(e)) {
+    struct lock *lk = container_of(e, struct lock, elem);
+    struct list *waiters = &lk->semaphore.waiters;
+    int max_in_waiters = max_priority_in_waiters(waiters);
+    if (max_in_waiters > max) {
+      max = max_in_waiters;
+    }
+  }
+  return max;
+}
+
 /** Releases LOCK, which must be owned by the current thread.
 
    An interrupt handler cannot acquire a lock, so it does not
@@ -241,10 +276,11 @@ void lock_release(struct lock *lock) {
   ASSERT(lock != NULL);
   ASSERT(lock_held_by_current_thread(lock));
 
-  int next_priority = lock->holder->original_priority;  // TODO:
-  lock->holder->priority = next_priority;
+  list_remove(&lock->elem);  // thread 不持有 🔐
+
+  int next_pri = next_priority(lock, lock->holder->original_priority);
+  lock->holder->priority = next_pri;
   lock->holder = NULL;
-  list_remove(&lock->elem);
   sema_up(&lock->semaphore);  // ---------- 退出临界区 ----------
 }
 
