@@ -222,6 +222,7 @@ static void __update_priority_r(struct thread *holder, int priority, struct list
   }
   if (holder->priority < priority) {  // updated
     holder->priority = priority;
+    holder->donated = true;
     if (holder->status == THREAD_BLOCKED) {                                       // recursively update
       struct list *waiters = elem_in_list(&holder->elem);                         // get the header of waiters list
       struct semaphore *sema = container_of(waiters, struct semaphore, waiters);  // get the semaphore
@@ -322,8 +323,9 @@ bool lock_try_acquire(struct lock *lock) {
   return success;
 }
 
+/** return -1 means: no waiters */
 static int max_priority_in_waiters(struct list *waiters) {
-  int max = PRI_MIN;
+  int max = -1;
   for (struct list_elem *e = list_begin(waiters); e != list_end(waiters); e = list_next(e)) {
     struct thread *t = container_of(e, struct thread, elem);
     if (t->priority > max) {
@@ -333,8 +335,8 @@ static int max_priority_in_waiters(struct list *waiters) {
   return max;
 }
 
-static int next_priority(struct lock *lock, int original_priority) {
-  int max = original_priority;
+static int next_priority(struct lock *lock) {
+  int max = -1;
   for (struct list_elem *e = list_begin(&lock->holder->locks); e != list_end(&lock->holder->locks); e = list_next(e)) {
     struct lock *lk = container_of(e, struct lock, elem);
     struct list *waiters = &lk->semaphore.waiters;
@@ -356,7 +358,11 @@ void lock_release(struct lock *lock) {
   ASSERT(lock_held_by_current_thread(lock));
 
   thread_pop_lock(lock->holder, lock);
-  int next_pri = next_priority(lock, lock->holder->original_priority);
+  int next_pri = next_priority(lock);
+  if (next_pri == -1) {
+    next_pri = lock->holder->before_donated_priority;
+    lock->holder->donated = false;
+  }
   lock->holder->priority = next_pri;
   lock->holder = NULL;        // clear holder
   sema_up(&lock->semaphore);  // ---------- 退出临界区 ----------
