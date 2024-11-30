@@ -95,6 +95,21 @@ bool sema_try_down(struct semaphore *sema) {
   return success;
 }
 
+static bool waiters_less_func(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED) {
+  struct thread *t1 = container_of(a, struct thread, elem);
+  struct thread *t2 = container_of(b, struct thread, elem);
+  return t1->priority < t2->priority;
+}
+
+static struct thread *pop_max_priority_thread(struct list *list) {
+  struct list_elem *elem = list_max(list, waiters_less_func, NULL);
+  ASSERT(elem != NULL);
+  list_remove(elem);
+  elem->next = NULL;
+  elem->prev = NULL;
+  return container_of(elem, struct thread, elem);
+}
+
 /** Up or "V" operation on a semaphore.  Increments SEMA's value
    and wakes up one thread of those waiting for SEMA, if any.
 
@@ -105,7 +120,10 @@ void sema_up(struct semaphore *sema) {
   ASSERT(sema != NULL);
 
   old_level = intr_disable();
-  if (!list_empty(&sema->waiters)) thread_unblock(container_of(list_pop_front(&sema->waiters), struct thread, elem));
+  if (!list_empty(&sema->waiters)) {
+    struct thread *t = pop_max_priority_thread(&sema->waiters);
+    thread_unblock(t);
+  }
   sema->value++;
   intr_set_level(old_level);
 }
@@ -229,20 +247,6 @@ struct semaphore_elem {
   struct semaphore semaphore; /**< This semaphore. */
 };
 
-// static bool ready_list_less_func(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED) {
-//   struct semaphore_elem *sema1 = container_of(a, struct semaphore_elem, elem);
-//   struct semaphore_elem *sema2 = container_of(b, struct semaphore_elem, elem);
-// }
-
-// static struct thread *pop_max_priority_thread(struct list *list) {
-//   struct list_elem *elem = list_max(list, ready_list_less_func, NULL);
-//   ASSERT(elem != NULL);
-//   list_remove(elem);
-//   elem->next = NULL;
-//   elem->prev = NULL;
-//   return container_of(elem, struct thread, elem);
-// }
-
 /** Initializes condition variable COND.  A condition variable
    allows one piece of code to signal a condition and cooperating
    code to receive the signal and act upon it. */
@@ -301,9 +305,9 @@ void cond_signal(struct condition *cond, struct lock *lock UNUSED) {
   ASSERT(lock_held_by_current_thread(lock));
 
   if (!list_empty(&cond->waiters)) {
-    __auto_type a = list_pop_front(&cond->waiters);
-    __auto_type b = container_of(a, struct semaphore_elem, elem);
-    sema_up(&b->semaphore);
+    struct list_elem *elem = list_pop_front(&cond->waiters);
+    struct semaphore_elem *sema_elem = container_of(elem, struct semaphore_elem, elem);
+    sema_up(&sema_elem->semaphore);
   }
 }
 
