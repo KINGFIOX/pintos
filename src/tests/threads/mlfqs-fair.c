@@ -52,7 +52,7 @@ static void test_mlfqs_fair(int thread_cnt, int nice_min, int nice_step) {
   int nice;
   int i;
 
-  ASSERT(thread_mlfqs);
+  ASSERT(thread_mlfqs());
   ASSERT(thread_cnt <= MAX_THREAD_CNT);
   ASSERT(nice_min >= -10);
   ASSERT(nice_step >= 0);

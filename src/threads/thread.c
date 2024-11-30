@@ -57,11 +57,6 @@ static long long user_ticks;   /**< # of timer ticks in user programs. */
 #define TIME_SLICE 4              /**< # of timer ticks to give each thread. */
 static unsigned int thread_ticks; /**< # of timer ticks since last yield.(用于标记, 当前处理器上的线程, 他运行了多长时间, reset at thread_schedule_tail) */
 
-/** If false (default), use round-robin scheduler.
-   If true, use multi-level feedback queue scheduler.
-   Controlled by kernel command-line option "-o mlfqs". */
-bool thread_mlfqs;
-
 static void kernel_thread(thread_func *, void *aux);
 
 static void idle(void *aux UNUSED);
