@@ -196,8 +196,18 @@ void lock_acquire(struct lock *lock) {
   ASSERT(!intr_context());
   ASSERT(!lock_held_by_current_thread(lock));
 
-  sema_down(&lock->semaphore);
+  struct thread *cur = thread_current();
+  struct thread *holder = lock->holder;
+
+  if (holder != NULL) {                      // 🔐 被占用
+    if (holder->priority < cur->priority) {  // 优先级反转
+      holder->priority = cur->priority;
+    }
+  }
+
+  sema_down(&lock->semaphore);  // ---------- 进入临界区 ----------
   lock->holder = thread_current();
+  list_push_back(&cur->locks, &lock->elem);
 }
 
 /** Tries to acquires LOCK and returns true if successful or false
@@ -212,8 +222,13 @@ bool lock_try_acquire(struct lock *lock) {
   ASSERT(lock != NULL);
   ASSERT(!lock_held_by_current_thread(lock));
 
-  success = sema_try_down(&lock->semaphore);
-  if (success) lock->holder = thread_current();
+  struct thread *cur = thread_current();
+
+  success = sema_try_down(&lock->semaphore);  // ----------  ----------
+  if (success) {
+    lock->holder = thread_current();
+    list_push_back(&cur->locks, &lock->elem);
+  }
   return success;
 }
 
@@ -226,8 +241,11 @@ void lock_release(struct lock *lock) {
   ASSERT(lock != NULL);
   ASSERT(lock_held_by_current_thread(lock));
 
+  int next_priority = lock->holder->original_priority;  // TODO:
+  lock->holder->priority = next_priority;
   lock->holder = NULL;
-  sema_up(&lock->semaphore);
+  list_remove(&lock->elem);
+  sema_up(&lock->semaphore);  // ---------- 退出临界区 ----------
 }
 
 /** Returns true if the current thread holds LOCK, false
