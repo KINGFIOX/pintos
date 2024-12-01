@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "devices/timer.h"
+#include "fixed1714.h"
 #include "kernel/list.h"
 #include "threads/flags.h"
 #include "threads/interrupt.h"
@@ -70,6 +71,8 @@ void thread_schedule_tail(struct thread *prev);
 static tid_t allocate_tid(void);
 static bool ready_list_less_func(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
 static struct thread *pop_max_priority_thread(struct list *list);  // 这个会破坏 list
+
+static fixed1714_t load_avg(void);
 
 /** Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -375,11 +378,42 @@ int thread_get_nice(void) {
   return nice;
 }
 
-/** Returns 100 times the system load average. */
-int thread_get_load_avg(void) {
-  /* Not yet implemented. */
+/** ready_threads is the number of threads that are either
+ * running or ready to run at time of update (not including the idle thread). */
+static int ready_threads(void) {
+  // TODO:
   return 0;
 }
+
+static fixed1714_t *__load_avg(void) {
+  static fixed1714_t _data = {._raw = 0};  // init with 0 at boot
+  return &_data;
+}
+
+void update_load_avg(void) {
+  // NOTE: 一秒计算一次
+  // FORMULA: load_avg = 59/60 * load_avg + 1/60 * ready_threads
+  fixed1714_t *la = __load_avg();
+  fixed1714_t la_59_60 = fixed1714_mul(fixed1714(59, 60), *la);
+  fixed1714_t rt_60 = fixed1714_div_int(fixed1714(ready_threads(), 1), 60);
+  *la = fixed1714_add(la_59_60, rt_60);
+}
+
+static fixed1714_t load_avg(void) { return *__load_avg(); }
+
+/** In addition, once per second the value of recent_cpu is recalculated for every thread (whether running, ready, or blocked) */
+static fixed1714_t calculate_recent_cpu(fixed1714_t recent_cpu, int nice) {
+  // NOTE: 一秒计算一次, 这需要排在 update_load_avg 之后. 相当于是 mlfqs 每秒刷新一次
+  // FORMULA: recent_cpu = (2 * load_avg)/(2 * load_avg + 1) * recent_cpu + nice
+  fixed1714_t la = load_avg();
+  fixed1714_t two_la = fixed1714_mul_int(la, 2);
+  fixed1714_t coefficient = fixed1714_div(two_la, fixed1714_add_int(two_la, 1));
+  fixed1714_t recent_cpu_coe = fixed1714_mul(coefficient, recent_cpu);
+  return fixed1714_add_int(recent_cpu_coe, nice);
+}
+
+/** Returns 100 times the system load average. */
+int thread_get_load_avg(void) { return fixed1714_to_int_round(fixed1714_mul_int(load_avg(), 100)); }
 
 static int64_t last_sched(void) {
   static int64_t _data = 0;
