@@ -118,15 +118,9 @@ static void __sema_up(struct semaphore *sema) {
 
   old_level = intr_disable();
   if (!list_empty(&sema->waiters)) {
-    if (!thread_mlfqs()) {  ////////////////////////////////////////////////////
-      struct thread *t = sema_pop_max_priority_thread(&sema->waiters);
-      ASSERT(t != NULL);
-      thread_unblock(t);
-    } else {  //////////////////////////////////////////////////////////////////
-
-      // TODO: mlfq
-      thread_unblock(container_of(list_pop_front(&sema->waiters), struct thread, elem));
-    }
+    struct thread *t = sema_pop_max_priority_thread(&sema->waiters);
+    ASSERT(t != NULL);
+    thread_unblock(t);
   }
   sema->value++;
   intr_set_level(old_level);
@@ -142,15 +136,9 @@ void sema_up_intr(struct semaphore *sema) {
 
    This function may be called from an interrupt handler. */
 void sema_up(struct semaphore *sema) {
-  if (!thread_mlfqs()) {  ////////////////////////////////////////////////////
-    ASSERT(!intr_context());
-    __sema_up(sema);
-    thread_yield();
-  } else {  /////////////////////////////////////////////////////////////////
-
-    // TODO: mlfqs
-    __sema_up(sema);
-  }
+  ASSERT(!intr_context());
+  __sema_up(sema);
+  thread_yield();
 }
 
 static void sema_test_helper(void *sema_);
@@ -207,6 +195,8 @@ void lock_init(struct lock *lock) {
   lock->holder = NULL;
   sema_init(&lock->semaphore, 1);
 }
+
+////////////////////////////////////////////////////////////// NOTE: priority donation {
 
 struct buffer_elem {
   struct list_elem elem;
@@ -286,6 +276,8 @@ static void thread_pop_lock(struct thread *cur, struct lock *lck) {
   lck->elem.prev = NULL;
 }
 
+////////////////////////////////////////////////////////////// NOTE: priority donation }
+
 /** Acquires LOCK, sleeping until it becomes available if
    necessary.  The lock must not already be held by the current
    thread.
@@ -299,7 +291,7 @@ void lock_acquire(struct lock *lock) {
   ASSERT(!intr_context());
   ASSERT(!lock_held_by_current_thread(lock));
 
-  if (!thread_mlfqs()) {  ////////////////////////////////////////////////////
+  if (!thread_mlfqs()) {  //////////////////////////////////////////////////// NOTE: priority donation
     struct thread *cur = thread_current();
     struct thread *holder = lock->holder;
 
@@ -313,9 +305,8 @@ void lock_acquire(struct lock *lock) {
     sema_down(&lock->semaphore);  // ---------- 进入临界区 ----------
     lock->holder = thread_current();
     thread_push_lock(cur, lock);
-  } else {  ////////////////////////////////////////////////////////////////
+  } else {  //////////////////////////////////////////////////////////////// TODO: mlfqs
 
-    // TODO: mlfqs
     sema_down(&lock->semaphore);
     lock->holder = thread_current();
   }
@@ -333,16 +324,15 @@ bool lock_try_acquire(struct lock *lock) {
   ASSERT(lock != NULL);
   ASSERT(!lock_held_by_current_thread(lock));
 
-  if (!thread_mlfqs()) {  ////////////////////////////////////////////////////
+  if (!thread_mlfqs()) {  //////////////////////////////////////////////////// NOTE: priority donation
     struct thread *cur = thread_current();
     success = sema_try_down(&lock->semaphore);  // ----------  ----------
     if (success) {
       lock->holder = thread_current();
-      list_push_back(&cur->locks, &lock->elem);
+      thread_push_lock(cur, lock);
     }
-  } else {  ////////////////////////////////////////////////////////////////
+  } else {  //////////////////////////////////////////////////////////////// TODO: mlfqs
 
-    // TODO: mlfqs
     success = sema_try_down(&lock->semaphore);
     if (success) lock->holder = thread_current();
   }
@@ -383,7 +373,7 @@ void lock_release(struct lock *lock) {
   ASSERT(lock != NULL);
   ASSERT(lock_held_by_current_thread(lock));
 
-  if (!thread_mlfqs()) {  ////////////////////////////////////////////////////
+  if (!thread_mlfqs()) {  //////////////////////////////////////////////////// NOTE: priority donation
     thread_pop_lock(lock->holder, lock);
     int next_pri = next_priority(lock);
     if (next_pri == -1) {
@@ -393,9 +383,8 @@ void lock_release(struct lock *lock) {
     lock->holder->priority = next_pri;
     lock->holder = NULL;        // clear holder
     sema_up(&lock->semaphore);  // ---------- 退出临界区 ----------
-  } else {                      /////////////////////////////////////////////
+  } else {                      ///////////////////////////////////////////// TODO: mlfqs
 
-    // TODO: mlfqs
     lock->holder = NULL;
     sema_up(&lock->semaphore);
   }
@@ -517,16 +506,10 @@ void cond_signal(struct condition *cond, struct lock *lock UNUSED) {
   ASSERT(lock_held_by_current_thread(lock));
 
   if (!list_empty(&cond->waiters)) {
-    if (!thread_mlfqs()) {  //////////////////////////////////////////////////
-      // printf("---------- cond_signal ----------\n");
-      // dump_cond_waiters(&cond->waiters, 0);
-      struct semaphore_elem *sema_elem = condvar_pop_max_priority_thread(&cond->waiters);
-      sema_up(&sema_elem->semaphore);
-    } else {  ////////////////////////////////////////////////////////////////
-
-      // TODO: mlfqs
-      sema_up(&container_of(list_pop_front(&cond->waiters), struct semaphore_elem, elem)->semaphore);
-    }
+    // printf("---------- cond_signal ----------\n");
+    // dump_cond_waiters(&cond->waiters, 0);
+    struct semaphore_elem *sema_elem = condvar_pop_max_priority_thread(&cond->waiters);
+    sema_up(&sema_elem->semaphore);
   }
 }
 

@@ -182,14 +182,12 @@ tid_t thread_create(const char *name, int priority, thread_func *function, void 
   /* Add to run queue. */
   thread_unblock(t);
 
-  if (!thread_mlfqs()) {  ///////////////////////////////////////////////////
+  if (!thread_mlfqs()) {  /////////////////////////////////////////////////// NOTE: 优先级调度
     struct thread *cur = thread_current();
     if (cur->priority < t->priority) {
       thread_yield();
     }
-  } else {  ///////////////////////////////////////////////////
-
-    // TODO: mlfqs
+  } else {  ///////////////////////////////////////////////////////////////// TODO: mlfqs
   }
 
   return tid;
@@ -325,7 +323,7 @@ int thread_set_priority(int new_priority) {
   struct thread *cur = thread_current();
   int old_priority = cur->priority;
 
-  if (!thread_mlfqs()) {  ///////////////////////////////////////////////////
+  if (!thread_mlfqs()) {  /////////////////////////////////////////////////// NOTE: priority donation
     cur->before_donated_priority = new_priority;
     if (cur->donated) {
       if (old_priority < new_priority) {
@@ -344,9 +342,8 @@ int thread_set_priority(int new_priority) {
       }
     }
     return old_priority;
-  } else {  //////////////////////////////////////////////////////////////////
+  } else {  ////////////////////////////////////////////////////////////////// TODO: mlfqs
 
-    // TODO: mlfqs
     cur->priority = new_priority;
     return old_priority;
   }
@@ -460,13 +457,12 @@ static void init_thread(struct thread *t, const char *name, int priority) {
   t->priority = priority;
   t->magic = THREAD_MAGIC;
 
-  if (!thread_mlfqs()) {  ///////////////////////////////////////////////////
+  t->recent_cpu = recent_cpu();
+
+  if (!thread_mlfqs()) {  ////////////////////////////////////////////////////////// NOTE: init: priority donation related data structure
     t->before_donated_priority = priority;
     list_init(&t->locks);
-    t->recent_cpu = recent_cpu();
-  } else {  ////////////////////////////////////////////////////////////////////////
-
-    // TODO: mlfqs
+  } else {  //////////////////////////////////////////////////////////////////////// TODO: mlfqs
   }
 
   old_level = intr_disable();              // get previous interrupt level
@@ -515,13 +511,12 @@ static struct thread *next_thread_to_run(void) {
   if (list_empty(&ready_list)) {
     return idle_thread;
   } else {
-    if (!thread_mlfqs()) {  ////////////////////////////////////////////////////
+    if (!thread_mlfqs()) {  //////////////////////////////////////////////////// NOTE: 优先级调度
       struct thread *next_thread = pop_max_priority_thread(&ready_list);
       next_thread->recent_cpu = recent_cpu();
       return next_thread;
-    } else {  //////////////////////////////////////////////////////////////////
+    } else {  ////////////////////////////////////////////////////////////////// TODO: mlfqs
 
-      // TODO: mlfqs
       return container_of(list_pop_front(&ready_list), struct thread, elem);
     }
   }

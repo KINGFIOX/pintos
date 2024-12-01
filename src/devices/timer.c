@@ -159,13 +159,7 @@ static void timer_sleep_tick(void) {
   for (struct list_elem *e = list_begin(&timer_sleep_list); e != list_end(&timer_sleep_list); e = list_next(e)) {
     struct timer_sleep *timer_sleep_elem = container_of(e, struct timer_sleep, elem);
     if (timer_elapsed(timer_sleep_elem->start) >= timer_sleep_elem->ticks) {
-      if (!thread_mlfqs()) {  ////////////////////////////////////////////////////
-        sema_up_intr(&timer_sleep_elem->sema);
-      } else {  //////////////////////////////////////////////////////////////////
-
-        // TODO: mlfqs
-        sema_up(&timer_sleep_elem->sema);
-      }
+      sema_up_intr(&timer_sleep_elem->sema);
       list_remove(e);
     }
   }
