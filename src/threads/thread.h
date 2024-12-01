@@ -156,6 +156,8 @@ int thread_set_nice(int nice);
 int thread_get_recent_cpu(void);
 int thread_get_load_avg(void);
 
+void update_load_avg(void);  // should be called once per second in timer
+
 void dump_thread(const struct thread *t, int indent);
 
 #endif /**< threads/thread.h */
