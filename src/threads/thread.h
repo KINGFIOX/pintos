@@ -101,11 +101,16 @@ struct thread {
   /* Owned by thread.c. */
   unsigned magic; /**< Detects stack overflow. */
 
+  /////////////////////////////////////// 优先级调度的辅助结构
   int before_donated_priority; /**< before donated priority. */
   bool donated;                /**< Whether the thread is donated. */
   struct list locks;
 
   int64_t recent_cpu; /**< Recent CPU time. */
+
+  /////////////////////////////////////// mlfqs
+
+  // TODO: mlfqs
 };
 
 /** If false (default), use round-robin scheduler.
