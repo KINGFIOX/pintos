@@ -2,6 +2,7 @@
 #define THREADS_THREAD_H
 
 #include <debug.h>
+#include <fixed1714.h>
 #include <list.h>
 #include <stdint.h>
 
@@ -116,6 +117,7 @@ struct thread {
 
   // TODO: mlfqs
   int nice;
+  fixed1714_t recent_cpu;  //
 };
 
 /** If false (default), use round-robin scheduler.
