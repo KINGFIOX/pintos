@@ -301,14 +301,14 @@ void lock_acquire(struct lock *lock) {
         // holder->priority = cur->priority;
       }
     }
+  }
 
-    sema_down(&lock->semaphore);  // ---------- 进入临界区 ----------
-    lock->holder = thread_current();
+  sema_down(&lock->semaphore);  // ---------- 进入临界区 ----------
+  lock->holder = thread_current();
+
+  if (!thread_mlfqs()) {  //////////////////////////////////////////////////// NOTE: priority donation
+    struct thread *cur = thread_current();
     thread_push_lock(cur, lock);
-  } else {  //////////////////////////////////////////////////////////////// TODO: mlfqs
-
-    sema_down(&lock->semaphore);
-    lock->holder = thread_current();
   }
 }
 
@@ -324,18 +324,16 @@ bool lock_try_acquire(struct lock *lock) {
   ASSERT(lock != NULL);
   ASSERT(!lock_held_by_current_thread(lock));
 
-  if (!thread_mlfqs()) {  //////////////////////////////////////////////////// NOTE: priority donation
-    struct thread *cur = thread_current();
-    success = sema_try_down(&lock->semaphore);  // ----------  ----------
-    if (success) {
-      lock->holder = thread_current();
+  success = sema_try_down(&lock->semaphore);
+  if (success) {
+    lock->holder = thread_current();
+
+    if (!thread_mlfqs()) {  //////////////////////////////////////////////////// NOTE: priority donation
+      struct thread *cur = thread_current();
       thread_push_lock(cur, lock);
     }
-  } else {  //////////////////////////////////////////////////////////////// TODO: mlfqs
-
-    success = sema_try_down(&lock->semaphore);
-    if (success) lock->holder = thread_current();
   }
+
   return success;
 }
 
