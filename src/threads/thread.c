@@ -62,7 +62,7 @@ static void kernel_thread(thread_func *, void *aux);
 static void idle(void *aux UNUSED);
 static struct thread *running_thread(void);
 static struct thread *next_thread_to_run(void);
-static void init_thread(struct thread *, const char *name, int priority);
+static void init_thread(struct thread *, const char *name, int priority, int nice);
 static bool is_thread(struct thread *) UNUSED;
 static void *alloc_frame(struct thread *, size_t size);
 static void schedule(void);
@@ -93,7 +93,7 @@ void thread_init(void) {
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread();
-  init_thread(initial_thread, "main", PRI_DEFAULT);
+  init_thread(initial_thread, "main", PRI_DEFAULT, 0);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid();
 }
@@ -156,12 +156,16 @@ void thread_print_stats(void) { printf("Thread: %lld idle ticks, %lld kernel tic
 tid_t thread_create(const char *name, int priority, thread_func *function, void *aux) {
   ASSERT(function != NULL);
 
+  struct thread *cur = thread_current();
+  ASSERT(cur->status == THREAD_RUNNING);
+  ASSERT(NICE_MIN <= cur->nice && cur->nice <= NICE_MAX);
+
   /* Allocate thread. */
   struct thread *t = palloc_get_page(PAL_ZERO);
   if (t == NULL) return TID_ERROR;
 
   /* Initialize thread. */
-  init_thread(t, name, priority);  // alloc a page for the thread (meta data, stack, THREAD_BLOCKED).
+  init_thread(t, name, priority, cur->nice);  // alloc a page for the thread (meta data, stack, THREAD_BLOCKED).
   tid_t tid = t->tid = allocate_tid();
 
   /* Stack frame for kernel_thread(). */
@@ -358,6 +362,7 @@ int thread_set_nice(int nice) {
   struct thread *cur = thread_current();
   int old_nice = cur->nice;
   cur->nice = nice;
+  // TODO: calculate the new priority
   return old_nice;
 }
 
@@ -450,7 +455,7 @@ static bool is_thread(struct thread *t) { return t != NULL && t->magic == THREAD
 
 /** Does basic initialization of T as a blocked thread named
    NAME. */
-static void init_thread(struct thread *t, const char *name, int priority) {
+static void init_thread(struct thread *t, const char *name, int priority, int nice) {
   enum intr_level old_level;
 
   ASSERT(t != NULL);
@@ -470,7 +475,7 @@ static void init_thread(struct thread *t, const char *name, int priority) {
   t->before_donated_priority = priority;
   list_init(&t->locks);
   //////////////////////////////////////////////////////////////////////// } TODO: mlfqs {
-  t->nice = 0;
+  t->nice = nice;
   //////////////////////////////////////////////////////////////////////// }
 
   old_level = intr_disable();              // get previous interrupt level
