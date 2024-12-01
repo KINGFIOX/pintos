@@ -182,9 +182,14 @@ tid_t thread_create(const char *name, int priority, thread_func *function, void 
   /* Add to run queue. */
   thread_unblock(t);
 
-  struct thread *cur = thread_current();
-  if (cur->priority < t->priority) {
-    thread_yield();
+  if (!thread_mlfqs()) {  ///////////////////////////////////////////////////
+    struct thread *cur = thread_current();
+    if (cur->priority < t->priority) {
+      thread_yield();
+    }
+  } else {  ///////////////////////////////////////////////////
+
+    // TODO: mlfqs
   }
 
   return tid;
@@ -318,26 +323,33 @@ void thread_foreach(thread_action_func *func, void *aux) {
 /** Sets the current thread's priority to NEW_PRIORITY. (主动调用的) */
 int thread_set_priority(int new_priority) {
   struct thread *cur = thread_current();
-
   int old_priority = cur->priority;
-  cur->before_donated_priority = new_priority;
-  if (cur->donated) {
-    if (old_priority < new_priority) {
+
+  if (!thread_mlfqs()) {  ///////////////////////////////////////////////////
+    cur->before_donated_priority = new_priority;
+    if (cur->donated) {
+      if (old_priority < new_priority) {
+        cur->priority = new_priority;
+      }
+    } else {
       cur->priority = new_priority;
-    }
-  } else {
-    cur->priority = new_priority;
-    if (new_priority < old_priority) {
-      if (!list_empty(&ready_list)) {
-        struct thread *first = container_of(list_max(&ready_list, ready_list_less_func, NULL), struct thread, elem);
-        ASSERT(cur != first);  // 不可能: 既 RUNNING 又 READY
-        if (cur->priority < first->priority) {
-          thread_yield();
+      if (new_priority < old_priority) {
+        if (!list_empty(&ready_list)) {
+          struct thread *first = container_of(list_max(&ready_list, ready_list_less_func, NULL), struct thread, elem);
+          ASSERT(cur != first);  // 不可能: 既 RUNNING 又 READY
+          if (cur->priority < first->priority) {
+            thread_yield();
+          }
         }
       }
     }
+    return old_priority;
+  } else {  //////////////////////////////////////////////////////////////////
+
+    // TODO: mlfqs
+    cur->priority = new_priority;
+    return old_priority;
   }
-  return old_priority;
 }
 
 /** Returns the current thread's priority. */
@@ -446,10 +458,16 @@ static void init_thread(struct thread *t, const char *name, int priority) {
   strlcpy(t->name, name, sizeof t->name);
   t->stack = (uint8_t *)t + PGSIZE;
   t->priority = priority;
-  t->before_donated_priority = priority;
   t->magic = THREAD_MAGIC;
-  list_init(&t->locks);
-  t->recent_cpu = recent_cpu();
+
+  if (!thread_mlfqs()) {  ///////////////////////////////////////////////////
+    t->before_donated_priority = priority;
+    list_init(&t->locks);
+    t->recent_cpu = recent_cpu();
+  } else {  ////////////////////////////////////////////////////////////////////////
+
+    // TODO: mlfqs
+  }
 
   old_level = intr_disable();              // get previous interrupt level
   list_push_back(&all_list, &t->allelem);  // all_list.push_back(t->allelem)
@@ -497,9 +515,15 @@ static struct thread *next_thread_to_run(void) {
   if (list_empty(&ready_list)) {
     return idle_thread;
   } else {
-    struct thread *next_thread = pop_max_priority_thread(&ready_list);
-    next_thread->recent_cpu = recent_cpu();
-    return next_thread;
+    if (!thread_mlfqs()) {  ////////////////////////////////////////////////////
+      struct thread *next_thread = pop_max_priority_thread(&ready_list);
+      next_thread->recent_cpu = recent_cpu();
+      return next_thread;
+    } else {  //////////////////////////////////////////////////////////////////
+
+      // TODO: mlfqs
+      return container_of(list_pop_front(&ready_list), struct thread, elem);
+    }
   }
 }
 
