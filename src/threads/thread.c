@@ -353,12 +353,19 @@ int thread_set_priority(int new_priority) {
 int thread_get_priority(void) { return thread_current()->priority; }
 
 /** Sets the current thread's nice value to NICE. */
-void thread_set_nice(int nice UNUSED) { /* Not yet implemented. */ }
+int thread_set_nice(int nice) {
+  if (nice < NICE_MIN || nice > NICE_MAX) return -1;  // invalid nice value
+  struct thread *cur = thread_current();
+  int old_nice = cur->nice;
+  cur->nice = nice;
+  return old_nice;
+}
 
 /** Returns the current thread's nice value. */
 int thread_get_nice(void) {
-  /* Not yet implemented. */
-  return 0;
+  int nice = thread_current()->nice;
+  ASSERT(NICE_MIN <= nice && nice <= NICE_MAX);
+  return nice;
 }
 
 /** Returns 100 times the system load average. */
@@ -459,11 +466,12 @@ static void init_thread(struct thread *t, const char *name, int priority) {
 
   t->last_sched = last_sched();
 
-  if (!thread_mlfqs()) {  ////////////////////////////////////////////////////////// NOTE: init: priority donation related data structure
-    t->before_donated_priority = priority;
-    list_init(&t->locks);
-  } else {  //////////////////////////////////////////////////////////////////////// TODO: mlfqs
-  }
+  ////////////////////////////////////////////////////////// NOTE: init: priority donation related data structure {
+  t->before_donated_priority = priority;
+  list_init(&t->locks);
+  //////////////////////////////////////////////////////////////////////// } TODO: mlfqs {
+  t->nice = 0;
+  //////////////////////////////////////////////////////////////////////// }
 
   old_level = intr_disable();              // get previous interrupt level
   list_push_back(&all_list, &t->allelem);  // all_list.push_back(t->allelem)
