@@ -157,7 +157,6 @@ tid_t thread_create(const char *name, int priority, thread_func *function, void 
   ASSERT(function != NULL);
 
   struct thread *cur = thread_current();
-  ASSERT(cur->status == THREAD_RUNNING);
   ASSERT(NICE_MIN <= cur->nice && cur->nice <= NICE_MAX);
 
   /* Allocate thread. */
@@ -356,13 +355,16 @@ int thread_set_priority(int new_priority) {
 /** Returns the current thread's priority. */
 int thread_get_priority(void) { return thread_current()->priority; }
 
+// /** policy: 指数加权移动平均 (exponentially weighted moving average, EWMA) */
+// UNUSED static int calculate_recent_cpu() {}
+
 /** Sets the current thread's nice value to NICE. */
 int thread_set_nice(int nice) {
   if (nice < NICE_MIN || nice > NICE_MAX) return -1;  // invalid nice value
   struct thread *cur = thread_current();
   int old_nice = cur->nice;
   cur->nice = nice;
-  // TODO: calculate the new priority
+  // TODO: update priority
   return old_nice;
 }
 
