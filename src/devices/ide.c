@@ -438,14 +438,8 @@ static void interrupt_handler(struct intr_frame *f) {
   for (c = channels; c < channels + CHANNEL_CNT; c++)
     if (f->vec_no == c->irq) {
       if (c->expecting_interrupt) {
-        inb(reg_status(c));                  /**< Acknowledge interrupt. */
-        if (!thread_mlfqs()) {               ////////////////////////////////////////////////////
-          sema_up_intr(&c->completion_wait); /**< Wake up waiter. */
-        } else {                             //////////////////////////////////////////////////////////////////
-
-          // TODO: mlfqs
-          sema_up(&c->completion_wait);
-        }
+        inb(reg_status(c));                /**< Acknowledge interrupt. */
+        sema_up_intr(&c->completion_wait); /**< Wake up waiter. */
       } else
         printf("%s: unexpected interrupt\n", c->name);
       return;
