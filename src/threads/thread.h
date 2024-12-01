@@ -101,7 +101,7 @@ struct thread {
   /* Owned by thread.c. */
   unsigned magic; /**< Detects stack overflow. */
 
-  int64_t recent_cpu; /**< Recent CPU time. */
+  int64_t last_sched; /**< last schedule time. */
 
   /////////////////////////////////////// priority donation
   int before_donated_priority; /**< before donated priority. */

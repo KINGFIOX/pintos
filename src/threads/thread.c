@@ -367,7 +367,7 @@ int thread_get_load_avg(void) {
   return 0;
 }
 
-static int64_t recent_cpu(void) {
+static int64_t last_sched(void) {
   static int64_t _data = 0;
   enum intr_level old_level;
   old_level = intr_disable();
@@ -378,7 +378,7 @@ static int64_t recent_cpu(void) {
 
 /** Returns 100 times the current thread's recent_cpu value. */
 int thread_get_recent_cpu(void) {
-  /* Not yet implemented. */
+  /* TODO: Not yet implemented. */
   return 0;
 }
 
@@ -457,7 +457,7 @@ static void init_thread(struct thread *t, const char *name, int priority) {
   t->priority = priority;
   t->magic = THREAD_MAGIC;
 
-  t->recent_cpu = recent_cpu();
+  t->last_sched = last_sched();
 
   if (!thread_mlfqs()) {  ////////////////////////////////////////////////////////// NOTE: init: priority donation related data structure
     t->before_donated_priority = priority;
@@ -488,8 +488,8 @@ static bool ready_list_less_func(const struct list_elem *a, const struct list_el
   if (t1->priority != t2->priority) {
     return t1->priority < t2->priority;
   } else {  // t1->priority == t2->priority
-    ASSERT(t1->recent_cpu != t2->recent_cpu);
-    return t1->recent_cpu > t2->recent_cpu;
+    ASSERT(t1->last_sched != t2->last_sched);
+    return t1->last_sched > t2->last_sched;
   }
 }
 
@@ -513,7 +513,7 @@ static struct thread *next_thread_to_run(void) {
   } else {
     if (!thread_mlfqs()) {  //////////////////////////////////////////////////// NOTE: 优先级调度
       struct thread *next_thread = pop_max_priority_thread(&ready_list);
-      next_thread->recent_cpu = recent_cpu();
+      next_thread->last_sched = last_sched();
       return next_thread;
     } else {  ////////////////////////////////////////////////////////////////// TODO: mlfqs
 
