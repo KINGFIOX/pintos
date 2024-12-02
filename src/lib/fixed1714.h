@@ -4,6 +4,7 @@
 #define FRACTION_BITS 14
 #define INTEGER_BITS (32 - FRACTION_BITS - 1)
 
+#include <stdbool.h>
 #include <stdint.h>
 
 typedef union {
@@ -18,6 +19,7 @@ typedef union {
 fixed1714_t fixed1714(int numerator, int denominator);
 int fixed1714_to_int_zero(fixed1714_t x);
 int fixed1714_to_int_round(fixed1714_t x);
+
 fixed1714_t fixed1714_add(fixed1714_t x, fixed1714_t y);
 fixed1714_t fixed1714_add_int(fixed1714_t x, int n);
 fixed1714_t fixed1714_sub(fixed1714_t x, fixed1714_t y);
@@ -26,5 +28,7 @@ fixed1714_t fixed1714_mul(fixed1714_t x, fixed1714_t y);
 fixed1714_t fixed1714_mul_int(fixed1714_t x, int n);
 fixed1714_t fixed1714_div(fixed1714_t x, fixed1714_t y);
 fixed1714_t fixed1714_div_int(fixed1714_t x, int n);
+
+bool fixed1714_eq(fixed1714_t x, fixed1714_t y);
 
 #endif

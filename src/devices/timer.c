@@ -39,7 +39,7 @@ static void real_time_delay(int64_t num, int32_t denom);
 static struct lock timer_sleep_lock;
 static struct list timer_sleep_list;
 
-struct timer_sleep {
+struct timer_sleep_elem {
   struct list_elem elem;
   int64_t start;
   int64_t ticks;
@@ -100,16 +100,16 @@ void timer_sleep(int64_t ticks) {
 
   ASSERT(intr_get_level() == INTR_ON);
 
-  struct timer_sleep timer_sleep_elem;
-  timer_sleep_elem.start = start;
-  timer_sleep_elem.ticks = ticks;
-  sema_init(&timer_sleep_elem.sema, 0);
+  struct timer_sleep_elem tse;
+  tse.start = start;
+  tse.ticks = ticks;
+  sema_init(&tse.sema, 0);
 
   lock_acquire(&timer_sleep_lock);
-  list_push_back(&timer_sleep_list, &timer_sleep_elem.elem);
+  list_push_back(&timer_sleep_list, &tse.elem);
   lock_release(&timer_sleep_lock);
 
-  sema_down(&timer_sleep_elem.sema);
+  sema_down(&tse.sema);
 
   //   while (timer_elapsed(start) < ticks) thread_yield();
 }
@@ -160,9 +160,9 @@ void timer_print_stats(void) { printf("Timer: %" PRId64 " ticks\n", timer_ticks(
 
 static void timer_sleep_tick(void) {
   for (struct list_elem *e = list_begin(&timer_sleep_list); e != list_end(&timer_sleep_list); e = list_next(e)) {
-    struct timer_sleep *timer_sleep_elem = container_of(e, struct timer_sleep, elem);
-    if (timer_elapsed(timer_sleep_elem->start) >= timer_sleep_elem->ticks) {
-      sema_up_intr(&timer_sleep_elem->sema);
+    struct timer_sleep_elem *tse = container_of(e, struct timer_sleep_elem, elem);
+    if (timer_elapsed(tse->start) >= tse->ticks) {
+      sema_up_intr(&tse->sema);
       list_remove(e);
     }
   }
@@ -179,18 +179,21 @@ static void incr_recent_cpu_tick(void) {
   cur->recent_cpu = fixed1714_add_int(cur->recent_cpu, 1);
 }
 
-static void recent_cpu_tick(void) {
+static bool recent_cpu_tick(void) {
   if (timer_ticks() % TIMER_FREQ == 0) {
     update_recent_cpu();
   } else {
     incr_recent_cpu_tick();
   }
+  return true;
 }
 
-static void load_avg_tick(void) {
+static bool load_avg_tick(void) {
   if (timer_ticks() % TIMER_FREQ == 0) {
     update_load_avg();
+    return true;
   }
+  return false;
 }
 
 /** It is also recalculated once every fourth clock tick, for every thread.
@@ -213,6 +216,7 @@ static void timer_interrupt(struct intr_frame *args UNUSED) {
   if (thread_mlfqs()) {
     load_avg_tick();
     recent_cpu_tick();
+    ASSERT(TIMER_FREQ % 4 == 0);
     priority_tick();
   }
 }
