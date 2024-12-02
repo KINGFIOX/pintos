@@ -66,3 +66,5 @@ fixed1714_t fixed1714_div_int(fixed1714_t x, int n) {
   z._raw = x._raw / n;
   return z;
 }
+
+bool fixed1714_eq(fixed1714_t x, fixed1714_t y) { return x._raw == y._raw; }

@@ -114,10 +114,8 @@ struct thread {
   struct list locks;
 
   /////////////////////////////////////// mlfqs
-
-  // TODO: mlfqs
   int nice;
-  fixed1714_t recent_cpu;  //
+  fixed1714_t recent_cpu;
 };
 
 /** If false (default), use round-robin scheduler.
