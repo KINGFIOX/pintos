@@ -1,13 +1,14 @@
 #include "threads/thread.h"
 
 #include <debug.h>
+#include <fixed1714.h>
+#include <formula.h>
 #include <random.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "devices/timer.h"
-#include "fixed1714.h"
 #include "kernel/list.h"
 #include "threads/flags.h"
 #include "threads/interrupt.h"
@@ -63,7 +64,7 @@ static void kernel_thread(thread_func *, void *aux);
 static void idle(void *aux UNUSED);
 static struct thread *running_thread(void);
 static struct thread *next_thread_to_run(void);
-static void init_thread(struct thread *, const char *name, int priority, int nice);
+static void init_thread(struct thread *, const char *name, int priority);
 static bool is_thread(struct thread *) UNUSED;
 static void *alloc_frame(struct thread *, size_t size);
 static void schedule(void);
@@ -96,7 +97,12 @@ void thread_init(void) {
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread();
-  init_thread(initial_thread, "main", PRI_DEFAULT, 0);
+  init_thread(initial_thread, "main", PRI_DEFAULT);
+  //////////////////////////////////////////////////////////////////////// NOTE: mlfqs {
+  initial_thread->nice = 0;
+  initial_thread->recent_cpu = fixed1714(0, 1);
+  //////////////////////////////////////////////////////////////////////// }
+
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid();
 }
@@ -167,7 +173,15 @@ tid_t thread_create(const char *name, int priority, thread_func *function, void 
   if (t == NULL) return TID_ERROR;
 
   /* Initialize thread. */
-  init_thread(t, name, priority, cur->nice);  // alloc a page for the thread (meta data, stack, THREAD_BLOCKED).
+  init_thread(t, name, priority);  // alloc a page for the thread (meta data, stack, THREAD_BLOCKED).
+  //////////////////////////////////////////////////////////////////////// NOTE: mlfqs {
+  t->nice = cur->nice;
+  t->recent_cpu = cur->recent_cpu;
+  if (thread_mlfqs()) {
+    t->priority = formula_priority(t->recent_cpu, t->nice);
+  }
+  //////////////////////////////////////////////////////////////////////// }
+
   tid_t tid = t->tid = allocate_tid();
 
   /* Stack frame for kernel_thread(). */
@@ -188,13 +202,12 @@ tid_t thread_create(const char *name, int priority, thread_func *function, void 
   /* Add to run queue. */
   thread_unblock(t);
 
-  if (!thread_mlfqs()) {  /////////////////////////////////////////////////// NOTE: 优先级调度
-    struct thread *cur = thread_current();
-    if (cur->priority < t->priority) {
-      thread_yield();
-    }
-  } else {  ///////////////////////////////////////////////////////////////// TODO: mlfqs
+  // if (!thread_mlfqs()) {  /////////////////////////////////////////////////// NOTE: 优先级调度
+  if (cur->priority < t->priority) {
+    thread_yield();
   }
+  // } else {  ///////////////////////////////////////////////////////////////// TODO: mlfqs
+  // }
 
   return tid;
 }
@@ -358,16 +371,13 @@ int thread_set_priority(int new_priority) {
 /** Returns the current thread's priority. */
 int thread_get_priority(void) { return thread_current()->priority; }
 
-// /** policy: 指数加权移动平均 (exponentially weighted moving average, EWMA) */
-// UNUSED static int calculate_recent_cpu() {}
-
 /** Sets the current thread's nice value to NICE. */
 int thread_set_nice(int nice) {
   if (nice < NICE_MIN || nice > NICE_MAX) return -1;  // invalid nice value
   struct thread *cur = thread_current();
   int old_nice = cur->nice;
   cur->nice = nice;
-  // TODO: update priority
+  cur->priority = formula_priority(cur->recent_cpu, nice);
   return old_nice;
 }
 
@@ -381,8 +391,13 @@ int thread_get_nice(void) {
 /** ready_threads is the number of threads that are either
  * running or ready to run at time of update (not including the idle thread). */
 static int ready_threads(void) {
-  // TODO:
-  return 0;
+  int count = 0;
+  for (struct list_elem *e = list_begin(&all_list); e != list_end(&all_list); e = list_next(e)) {
+    struct thread *t = container_of(e, struct thread, allelem);
+    if (0 == strcmp(t->name, "idle")) continue;
+    if (t->status == THREAD_RUNNING || t->status == THREAD_READY) count++;
+  }
+  return count;
 }
 
 static fixed1714_t *__load_avg(void) {
@@ -391,25 +406,19 @@ static fixed1714_t *__load_avg(void) {
 }
 
 void update_load_avg(void) {
-  // NOTE: 一秒计算一次
-  // FORMULA: load_avg = 59/60 * load_avg + 1/60 * ready_threads
   fixed1714_t *la = __load_avg();
-  fixed1714_t la_59_60 = fixed1714_mul(fixed1714(59, 60), *la);
-  fixed1714_t rt_60 = fixed1714_div_int(fixed1714(ready_threads(), 1), 60);
-  *la = fixed1714_add(la_59_60, rt_60);
+  int rdys = ready_threads();
+  *la = formula_load_avg(*la, rdys);
 }
 
 static fixed1714_t load_avg(void) { return *__load_avg(); }
 
-/** In addition, once per second the value of recent_cpu is recalculated for every thread (whether running, ready, or blocked) */
-static fixed1714_t calculate_recent_cpu(fixed1714_t recent_cpu, int nice) {
-  // NOTE: 一秒计算一次, 这需要排在 update_load_avg 之后. 相当于是 mlfqs 每秒刷新一次
-  // FORMULA: recent_cpu = (2 * load_avg)/(2 * load_avg + 1) * recent_cpu + nice
-  fixed1714_t la = load_avg();
-  fixed1714_t two_la = fixed1714_mul_int(la, 2);
-  fixed1714_t coefficient = fixed1714_div(two_la, fixed1714_add_int(two_la, 1));
-  fixed1714_t recent_cpu_coe = fixed1714_mul(coefficient, recent_cpu);
-  return fixed1714_add_int(recent_cpu_coe, nice);
+void update_recent_cpu(void) {
+  for (struct list_elem *e = list_begin(&all_list); e != list_end(&all_list); e = list_next(e)) {
+    struct thread *t = container_of(e, struct thread, allelem);
+    if (t->status == THREAD_DYING) continue;  // skip dying thread
+    t->recent_cpu = formula_recent_cpu(t->recent_cpu, load_avg(), t->nice);
+  }
 }
 
 /** Returns 100 times the system load average. */
@@ -425,10 +434,7 @@ static int64_t last_sched(void) {
 }
 
 /** Returns 100 times the current thread's recent_cpu value. */
-int thread_get_recent_cpu(void) {
-  /* TODO: Not yet implemented. */
-  return 0;
-}
+int thread_get_recent_cpu(void) { return fixed1714_to_int_round(fixed1714_mul_int(thread_current()->recent_cpu, 100)); }
 
 /** Idle thread.  Executes when no other thread is ready to run.
 
@@ -491,7 +497,7 @@ static bool is_thread(struct thread *t) { return t != NULL && t->magic == THREAD
 
 /** Does basic initialization of T as a blocked thread named
    NAME. */
-static void init_thread(struct thread *t, const char *name, int priority, int nice) {
+static void init_thread(struct thread *t, const char *name, int priority) {
   enum intr_level old_level;
 
   ASSERT(t != NULL);
@@ -502,16 +508,14 @@ static void init_thread(struct thread *t, const char *name, int priority, int ni
   t->status = THREAD_BLOCKED;
   strlcpy(t->name, name, sizeof t->name);
   t->stack = (uint8_t *)t + PGSIZE;
-  t->priority = priority;
   t->magic = THREAD_MAGIC;
 
   t->last_sched = last_sched();
 
   ////////////////////////////////////////////////////////// NOTE: init: priority donation related data structure {
+  t->priority = priority;
   t->before_donated_priority = priority;
   list_init(&t->locks);
-  //////////////////////////////////////////////////////////////////////// } TODO: mlfqs {
-  t->nice = nice;
   //////////////////////////////////////////////////////////////////////// }
 
   old_level = intr_disable();              // get previous interrupt level
@@ -560,14 +564,12 @@ static struct thread *next_thread_to_run(void) {
   if (list_empty(&ready_list)) {
     return idle_thread;
   } else {
-    if (!thread_mlfqs()) {  //////////////////////////////////////////////////// NOTE: 优先级调度
-      struct thread *next_thread = pop_max_priority_thread(&ready_list);
-      next_thread->last_sched = last_sched();
-      return next_thread;
-    } else {  ////////////////////////////////////////////////////////////////// TODO: mlfqs
-
-      return container_of(list_pop_front(&ready_list), struct thread, elem);
-    }
+    //////////////////////////////////////////////////// NOTE: 优先级调度
+    struct thread *next_thread = pop_max_priority_thread(&ready_list);
+    next_thread->last_sched = last_sched();
+    return next_thread;
+    // ////////////////////////////////////////////////////////////////// TODO: mlfqs
+    // return container_of(list_pop_front(&ready_list), struct thread, elem);
   }
 }
 
