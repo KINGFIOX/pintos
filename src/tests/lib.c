@@ -6,7 +6,7 @@
 #include <string.h>
 #include <syscall.h>
 
-const char *test_name;
+__attribute__((weak)) const char *test_name;
 bool quiet = false;
 
 static void vmsg(const char *format, va_list args, const char *suffix) {

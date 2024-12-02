@@ -14,7 +14,7 @@
 #include "threads/vaddr.h"
 
 /** List files in the root directory. */
-void fsutil_ls(char **argv UNUSED) {
+int fsutil_ls(char **argv UNUSED) {
   struct dir *dir;
   char name[NAME_MAX + 1];
 
@@ -24,11 +24,12 @@ void fsutil_ls(char **argv UNUSED) {
   while (dir_readdir(dir, name)) printf("%s\n", name);
   dir_close(dir);
   printf("End of listing.\n");
+  return 0;
 }
 
 /** Prints the contents of file ARGV[1] to the system console as
    hex and ASCII. */
-void fsutil_cat(char **argv) {
+int fsutil_cat(char **argv) {
   const char *file_name = argv[1];
 
   struct file *file;
@@ -47,19 +48,21 @@ void fsutil_cat(char **argv) {
   }
   palloc_free_page(buffer);
   file_close(file);
+  return 0;
 }
 
 /** Deletes file ARGV[1]. */
-void fsutil_rm(char **argv) {
+int fsutil_rm(char **argv) {
   const char *file_name = argv[1];
 
   printf("Deleting '%s'...\n", file_name);
   if (!filesys_remove(file_name)) PANIC("%s: delete failed\n", file_name);
+  return 0;
 }
 
 /** Extracts a ustar-format tar archive from the scratch block
    device into the Pintos file system. */
-void fsutil_extract(char **argv UNUSED) {
+int fsutil_extract(char **argv UNUSED) {
   static block_sector_t sector = 0;
 
   struct block *src;
@@ -128,6 +131,7 @@ void fsutil_extract(char **argv UNUSED) {
 
   free(data);
   free(header);
+  return 0;
 }
 
 /** Copies file FILE_NAME from the file system to the scratch
@@ -138,7 +142,7 @@ void fsutil_extract(char **argv UNUSED) {
    the device.  This position is independent of that used for
    fsutil_extract(), so `extract' should precede all
    `append's. */
-void fsutil_append(char **argv) {
+int fsutil_append(char **argv) {
   static block_sector_t sector = 0;
 
   const char *file_name = argv[1];
@@ -186,4 +190,5 @@ void fsutil_append(char **argv) {
   /* Finish up. */
   file_close(src);
   free(buffer);
+  return 0;
 }
