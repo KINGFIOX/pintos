@@ -180,7 +180,7 @@ static void incr_recent_cpu_tick(void) {
 }
 
 static void recent_cpu_tick(void) {
-  if (ticks % TIMER_FREQ == 0) {
+  if (timer_ticks() % TIMER_FREQ == 0) {
     update_recent_cpu();
   } else {
     incr_recent_cpu_tick();
@@ -188,7 +188,7 @@ static void recent_cpu_tick(void) {
 }
 
 static void load_avg_tick(void) {
-  if (ticks % TIMER_FREQ == 0) {
+  if (timer_ticks() % TIMER_FREQ == 0) {
     update_load_avg();
   }
 }
@@ -199,7 +199,7 @@ static void priority_tick(void) {
   struct thread *cur = thread_current();
   ASSERT(cur != NULL);
   ASSERT(cur->status == THREAD_RUNNING);
-  if (ticks % 4 == 0) {
+  if (timer_ticks() % 4 == 0) {
     int pri = formula_priority(cur->recent_cpu, cur->nice);
     thread_set_priority(pri);
   }
