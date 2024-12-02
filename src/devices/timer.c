@@ -4,8 +4,11 @@
 #include <inttypes.h>
 #include <round.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "devices/pit.h"
+#include "fixed1714.h"
+#include "formula.h"
 #include "kernel/list.h"
 #include "threads/interrupt.h"
 #include "threads/synch.h"
@@ -165,11 +168,53 @@ static void timer_sleep_tick(void) {
   }
 }
 
+/** Each time a timer interrupt occurs,
+ * recent_cpu is incremented by 1 for the running thread only,
+ * unless the idle thread is running. */
+static void incr_recent_cpu_tick(void) {
+  struct thread *cur = thread_current();
+  ASSERT(cur != NULL);
+  ASSERT(cur->status == THREAD_RUNNING);
+  if (0 == strcmp(cur->name, "idle")) return;
+  cur->recent_cpu = fixed1714_add_int(cur->recent_cpu, 1);
+}
+
+static void recent_cpu_tick(void) {
+  if (ticks % TIMER_FREQ == 0) {
+    update_recent_cpu();
+  } else {
+    incr_recent_cpu_tick();
+  }
+}
+
+static void load_avg_tick(void) {
+  if (ticks % TIMER_FREQ == 0) {
+    update_load_avg();
+  }
+}
+
+/** It is also recalculated once every fourth clock tick, for every thread.
+ * In either case, it is determined by the formula */
+static void priority_tick(void) {
+  struct thread *cur = thread_current();
+  ASSERT(cur != NULL);
+  ASSERT(cur->status == THREAD_RUNNING);
+  if (ticks % 4 == 0) {
+    int pri = formula_priority(cur->recent_cpu, cur->nice);
+    thread_set_priority(pri);
+  }
+}
+
 /** Timer interrupt handler. */
 static void timer_interrupt(struct intr_frame *args UNUSED) {
   ticks++;
   timer_sleep_tick();
   thread_tick();
+  if (thread_mlfqs()) {
+    load_avg_tick();
+    recent_cpu_tick();
+    priority_tick();
+  }
 }
 
 /** Returns true if LOOPS iterations waits for more than one timer
