@@ -10,6 +10,6 @@
 #define SEL_TSS 0x28   /**< Task-state segment. */
 #define SEL_CNT 6      /**< Number of segments. */
 
-void gdt_init(void);
+void gdt_init(void);  // only be called by pintos_init() in init.c
 
 #endif /**< userprog/gdt.h */

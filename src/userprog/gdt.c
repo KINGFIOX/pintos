@@ -33,7 +33,23 @@ static uint64_t make_tss_desc(void *laddr);
 static uint64_t make_gdtr_operand(uint16_t limit, void *base);
 
 /** Sets up a proper GDT.  The bootstrap loader's GDT didn't
-   include user-mode selectors or a TSS, but we need both now. */
+   include user-mode selectors or a TSS, but we need both now.
+
+   bootstrap 指的是: src/threads/start.S 中的 gdt 的初始化之类的. 如下:
+
+   .align 8
+gdt:
+  .quad 0x0000000000000000	# Null segment.  Not used by CPU.
+  .quad 0x00cf9a000000ffff	# System code, base 0, limit 4 GB.
+  .quad 0x00cf92000000ffff        # System data, base 0, limit 4 GB.
+
+gdtdesc:
+  .word	gdtdesc - gdt - 1	# Size of the GDT, minus 1 byte.
+  .long	gdt			# Address of the GDT.
+
+   我们这里再初始化一遍, 添加 user-mode 的 selectors, TSS.
+
+*/
 void gdt_init(void) {
   uint64_t gdtr_operand;
 

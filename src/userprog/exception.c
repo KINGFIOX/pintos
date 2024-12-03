@@ -27,12 +27,18 @@ static void page_fault(struct intr_frame *);
    implement virtual memory.
 
    Refer to [IA32-v3a] section 5.15 "Exception and Interrupt
-   Reference" for a description of each of these exceptions. */
+   Reference" for a description of each of these exceptions.
+
+   only be called by pintos_init() in init.c
+
+   INTR_ON, INTR_OFF means: enable/disable the interrupt when exception occurs
+*/
 void exception_init(void) {
   /* These exceptions can be raised explicitly by a user program,
      e.g. via the INT, INT3, INTO, and BOUND instructions.  Thus,
      we set DPL==3, meaning that user programs are allowed to
      invoke them via these instructions. */
+  // dpl == 3 => ring 3
   intr_register_int(3, 3, INTR_ON, kill, "#BP Breakpoint Exception");
   intr_register_int(4, 3, INTR_ON, kill, "#OF Overflow Exception");
   intr_register_int(5, 3, INTR_ON, kill, "#BR BOUND Range Exceeded Exception");
@@ -92,7 +98,8 @@ static void kill(struct intr_frame *f) {
       /* Some other code segment?  Shouldn't happen.  Panic the
          kernel. */
       printf("Interrupt %#04x (%s) in unknown segment %04x\n", f->vec_no, intr_name(f->vec_no), f->cs);
-      thread_exit();
+      NOT_REACHED();
+      // thread_exit();
   }
 }
 

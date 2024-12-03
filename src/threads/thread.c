@@ -518,6 +518,10 @@ static void init_thread(struct thread *t, const char *name, int priority) {
   list_init(&t->locks);
   //////////////////////////////////////////////////////////////////////// }
 
+#if USERPROG
+  // t->pagedir = ;
+#endif
+
   old_level = intr_disable();              // get previous interrupt level
   list_push_back(&all_list, &t->allelem);  // all_list.push_back(t->allelem)
   intr_set_level(old_level);               // restore previous interrupt level
