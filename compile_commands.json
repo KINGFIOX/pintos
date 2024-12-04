@@ -1,7 +1,7 @@
 [
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-Wa,--gstabs,--32",
       "-nostdinc",
@@ -20,7 +20,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -51,7 +51,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -82,7 +82,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-Wa,--gstabs,--32",
       "-nostdinc",
@@ -101,7 +101,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -132,7 +132,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-Wa,--gstabs,--32",
       "-nostdinc",
@@ -151,7 +151,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -182,7 +182,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -213,7 +213,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -244,7 +244,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -275,7 +275,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -306,7 +306,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -337,7 +337,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -368,7 +368,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -399,7 +399,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -430,7 +430,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -461,7 +461,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -492,7 +492,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -523,7 +523,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -554,7 +554,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -585,7 +585,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -616,7 +616,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -647,7 +647,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -678,7 +678,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -709,7 +709,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -740,7 +740,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -771,7 +771,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -802,7 +802,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -833,7 +833,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -864,7 +864,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -895,7 +895,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -926,7 +926,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -957,7 +957,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -988,7 +988,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1019,7 +1019,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1050,7 +1050,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1081,7 +1081,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1112,7 +1112,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1143,7 +1143,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1174,7 +1174,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1205,7 +1205,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1236,7 +1236,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1267,7 +1267,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1298,7 +1298,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1329,7 +1329,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1360,7 +1360,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1391,7 +1391,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1422,7 +1422,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1453,7 +1453,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1484,7 +1484,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-Wa,--gstabs,--32",
       "-nostdinc",
@@ -1500,7 +1500,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1530,7 +1530,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1560,7 +1560,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1590,7 +1590,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1620,7 +1620,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1650,7 +1650,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1680,7 +1680,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1710,7 +1710,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1740,7 +1740,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1770,7 +1770,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1800,7 +1800,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1830,7 +1830,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1860,7 +1860,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1890,7 +1890,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1920,7 +1920,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1950,7 +1950,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -1980,7 +1980,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2010,7 +2010,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2040,7 +2040,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2070,7 +2070,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2100,7 +2100,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2130,7 +2130,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2160,7 +2160,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2190,7 +2190,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2220,7 +2220,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2250,7 +2250,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2280,7 +2280,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2310,7 +2310,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2340,7 +2340,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2370,7 +2370,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2400,7 +2400,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2430,7 +2430,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2460,7 +2460,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2490,7 +2490,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2520,7 +2520,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2550,7 +2550,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2580,7 +2580,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2610,7 +2610,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2640,7 +2640,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2670,7 +2670,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2700,7 +2700,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2730,7 +2730,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2760,7 +2760,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2790,7 +2790,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2820,7 +2820,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2850,7 +2850,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2880,7 +2880,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2910,7 +2910,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2940,7 +2940,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -2970,7 +2970,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3000,7 +3000,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3030,7 +3030,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3060,7 +3060,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3090,7 +3090,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3120,7 +3120,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3150,7 +3150,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3180,7 +3180,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3210,7 +3210,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3240,7 +3240,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3270,7 +3270,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3300,7 +3300,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3330,7 +3330,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3360,7 +3360,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3390,7 +3390,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3420,7 +3420,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3450,7 +3450,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3480,7 +3480,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3510,7 +3510,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3540,7 +3540,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3570,7 +3570,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3600,7 +3600,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3630,7 +3630,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3660,7 +3660,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3690,7 +3690,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3720,7 +3720,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3750,7 +3750,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3780,7 +3780,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3810,7 +3810,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3840,7 +3840,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3870,7 +3870,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3900,7 +3900,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3930,7 +3930,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3960,7 +3960,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -3990,7 +3990,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -4020,7 +4020,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -4050,7 +4050,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -4080,7 +4080,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -4110,7 +4110,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -4140,7 +4140,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
@@ -4170,7 +4170,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/gcc",
+      "/usr/bin/i386-elf-gcc",
       "-c",
       "-m32",
       "-g",
