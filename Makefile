@@ -5,11 +5,13 @@ KERNEL = ./src/threads/build/kernel.o
 gdb:
 	gdb -x .gdbinit
 
+# NOTE: some distros use docker compose, some use docker-compose
+
 attach:
-	docker-compose exec pintos bash
+	docker compose exec pintos bash
 
 up:
-	docker-compose up -d
+	docker compose up -d
 
 start:
-	docker-compose start pintos
+	docker compose start pintos
