@@ -68,7 +68,7 @@ struct block *block_get_by_name(const char *name) {
   struct list_elem *e;
 
   for (e = list_begin(&all_blocks); e != list_end(&all_blocks); e = list_next(e)) {
-    struct block *block = list_entry(e, struct block, list_elem);
+    struct block *block = container_of(e, struct block, list_elem);
     if (!strcmp(name, block->name)) return block;
   }
 
@@ -162,5 +162,5 @@ struct block *block_register(const char *name, enum block_type type, const char 
 /** Returns the block device corresponding to LIST_ELEM, or a null
    pointer if LIST_ELEM is the list end of all_blocks. */
 static struct block *list_elem_to_block(struct list_elem *list_elem) {
-  return (list_elem != list_end(&all_blocks) ? list_entry(list_elem, struct block, list_elem) : NULL);
+  return (list_elem != list_end(&all_blocks) ? container_of(list_elem, struct block, list_elem) : NULL);
 }
