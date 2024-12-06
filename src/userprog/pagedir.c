@@ -17,7 +17,7 @@ static void invalidate_pagedir(uint32_t *);
    allocation fails. */
 uint32_t *pagedir_create(void) {
   uint32_t *pd = palloc_get_page(0);
-  if (pd != NULL) memcpy(pd, init_page_dir, PGSIZE);
+  if (pd != NULL) memcpy(pd, init_page_dir, PGSIZE);  // inherit from init_page_dir.
   return pd;
 }
 
@@ -184,6 +184,7 @@ void pagedir_set_accessed(uint32_t *pd, const void *vpage, bool accessed) {
 /** Loads page directory PD into the CPU's page directory base
    register. */
 void pagedir_activate(uint32_t *pd) {
+  // user program 第一次进入的时候, pd == NULL.
   if (pd == NULL) pd = init_page_dir;
 
   /* Store the physical address of the page directory into CR3

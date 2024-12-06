@@ -14,7 +14,7 @@
 
 #include "tests/lib.h"
 
-const char *test_name = "child-close";
+__attribute__((weak)) const char *test_name = "child-close";
 
 int main(int argc UNUSED, char *argv[]) {
   msg("begin");

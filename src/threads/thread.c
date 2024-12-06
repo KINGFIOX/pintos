@@ -28,7 +28,7 @@ static struct list ready_list;
 
 /** List of all processes.  Processes are added to this list
    when they are first scheduled and removed when they exit. */
-static struct list all_list;
+struct list all_list;
 
 /** Idle thread. */
 static struct thread *idle_thread;
@@ -459,6 +459,7 @@ void thread_schedule_tail(struct thread *prev) {
      pull out the rug under itself.  (We don't free
      initial_thread because its memory was not obtained via
      palloc().) */
+  // the process being sched out is dying and not the initial thread
   if (prev != NULL && prev->status == THREAD_DYING && prev != initial_thread) {
     ASSERT(prev != cur);
     palloc_free_page(prev);

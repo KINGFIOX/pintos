@@ -1,9 +1,9 @@
 services:
   pintos:
-    image: pkuflyingpig/pintos
+    image: gbenm/pintos
     container_name: pintos
     volumes:
-      - /home/wangfiox/Documents/pintos:/home/PKUOS/pintos
+      - /home/wangfiox/Documents/pintos:/pintos
     command: bash
     restart: unless-stopped
     tty: true

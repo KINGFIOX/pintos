@@ -39,7 +39,7 @@ void timer_init(void) {
   intr_register_ext(0x20, timer_interrupt, "8254 Timer");
 }
 
-/** Calibrates loops_per_tick, used to implement brief delays. */
+/** Calibrates(校准) loops_per_tick, used to implement brief delays. */
 void timer_calibrate(void) {
   unsigned high_bit, test_bit;
 

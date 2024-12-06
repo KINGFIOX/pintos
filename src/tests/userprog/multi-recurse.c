@@ -8,7 +8,7 @@
 
 #include "tests/lib.h"
 
-const char *test_name = "multi-recurse";
+__attribute__((weak)) const char *test_name = "multi-recurse";
 
 int main(int argc UNUSED, char *argv[]) {
   int n = atoi(argv[1]);

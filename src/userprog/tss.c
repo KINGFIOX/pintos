@@ -18,9 +18,13 @@
 
    Unfortunately, there is one thing that can only be done using
    a TSS: stack switching for interrupts that occur in user mode.
-   When an interrupt occurs in user mode (ring 3), the processor
-   consults the ss0 and esp0 members of the current TSS to
-   determine the stack to use for handling the interrupt.  Thus,
+
+   When an interrupt occurs in user mode (ring 3), the processor consults the ss0
+   and esp0 members of the current TSS to determine the stack to use for handling the interrupt.
+   ring 3, 中断发生的时候, CPU 会使用当前的 TSS 中的 ss0 和 esp0 来确定使用哪个栈来处理中断.
+   这个栈, 不是别人, 就是当前线程的 kernel stack.
+
+   Thus,
    we must create a TSS and initialize at least these fields, and
    this is precisely what this file does.
 
@@ -33,6 +37,7 @@
        place.  This is the case for interrupts that happen when
        we're running in the kernel.  The contents of the TSS are
        irrelevant for this case.
+       ring 0, 发生中断, 不用切换栈. 与 TSS 无关.
 
      - If the interrupted code is in a different ring from the
        handler, then the processor switches to the stack
@@ -45,6 +50,10 @@
        scheduler switches threads, it also changes the TSS's
        stack pointer to point to the new thread's kernel stack.
        (The call is in thread_schedule_tail() in thread.c.)
+       ring 3, 发生中断, 根据 TSS 切换栈.
+       我们需要写换到一个栈, which is not already in use, to avoid corruption.
+       因为我们在 user space, kernel stack is not already in use, 所以我们总是可以使用他.
+       所以, 当 scheduler 切换线程的时候, 它也会更新 TSS 的栈指针, 指向新的线程的 kernel stack.
 
    See [IA32-v3a] 6.2.1 "Task-State Segment (TSS)" for a
    description of the TSS.  See [IA32-v3a] 5.12.1 "Exception- or

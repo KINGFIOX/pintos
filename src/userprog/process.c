@@ -3,6 +3,7 @@
 #include <debug.h>
 #include <inttypes.h>
 #include <round.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +11,7 @@
 #include "filesys/directory.h"
 #include "filesys/file.h"
 #include "filesys/filesys.h"
+#include "list.h"
 #include "threads/flags.h"
 #include "threads/init.h"
 #include "threads/interrupt.h"
@@ -21,7 +23,8 @@
 #include "userprog/tss.h"
 
 static thread_func start_process NO_RETURN;
-static bool load(const char *cmdline, void (**eip)(void), void **esp);
+
+static bool load(char *args, void (**eip)(void), void **esp);
 
 /** Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -58,7 +61,7 @@ static void start_process(void *file_name_) {
   success = load(file_name, &if_.eip, &if_.esp);
 
   /* If load failed, quit. */
-  palloc_free_page(file_name);
+  palloc_free_page(file_name);  // argv[0] 对应的 page
   if (!success) thread_exit();
 
   /* Start the user process by simulating a return from an
@@ -71,6 +74,15 @@ static void start_process(void *file_name_) {
   NOT_REACHED();
 }
 
+static bool check_process_lived(tid_t tid) {
+  extern struct list all_list;
+  for (struct list_elem *e = list_begin(&all_list); e != list_end(&all_list); e = list_next(e)) {
+    struct thread *t = container_of(e, struct thread, allelem);
+    if (t->tid == tid) return true;
+  }
+  return false;
+}
+
 /** Waits for thread TID to die and returns its exit status.  If
    it was terminated by the kernel (i.e. killed due to an
    exception), returns -1.  If TID is invalid or if it was not a
@@ -80,7 +92,12 @@ static void start_process(void *file_name_) {
 
    This function will be implemented in problem 2-2.  For now, it
    does nothing. */
-int process_wait(tid_t child_tid UNUSED) { return -1; }
+int process_wait(tid_t child_tid) {
+  while (check_process_lived(child_tid)) {
+    thread_yield();
+  }
+  return -1;
+}
 
 /** Free the current process's resources. */
 void process_exit(void) {
@@ -111,10 +128,9 @@ void process_activate(void) {
   struct thread *t = thread_current();
 
   /* Activate thread's page tables. */
-  pagedir_activate(t->pagedir);
+  pagedir_activate(t->pagedir);  // switch to new page directory
 
-  /* Set thread's kernel stack for use in processing
-     interrupts. */
+  /* Set thread's kernel stack for use in processing interrupts. */
   tss_update();
 }
 
@@ -179,7 +195,7 @@ struct Elf32_Phdr {
 #define PF_W 2 /**< Writable. */
 #define PF_R 4 /**< Readable. */
 
-static bool setup_stack(void **esp);
+static bool setup_stack(void **esp, const char *file_name, char *args);
 static bool validate_segment(const struct Elf32_Phdr *, struct file *);
 static bool load_segment(struct file *file, off_t ofs, uint8_t *upage, uint32_t read_bytes, uint32_t zero_bytes, bool writable);
 
@@ -187,7 +203,7 @@ static bool load_segment(struct file *file, off_t ofs, uint8_t *upage, uint32_t 
    Stores the executable's entry point into *EIP
    and its initial stack pointer into *ESP.
    Returns true if successful, false otherwise. */
-bool load(const char *file_name, void (**eip)(void), void **esp) {
+bool load(char *args, void (**eip)(void), void **esp) {
   struct thread *t = thread_current();
   struct Elf32_Ehdr ehdr;
   struct file *file = NULL;
@@ -199,6 +215,8 @@ bool load(const char *file_name, void (**eip)(void), void **esp) {
   t->pagedir = pagedir_create();
   if (t->pagedir == NULL) goto done;
   process_activate();
+
+  const char *file_name = strtok_r(args, " ", &args);
 
   /* Open executable file. */
   file = filesys_open(file_name);
@@ -262,7 +280,7 @@ bool load(const char *file_name, void (**eip)(void), void **esp) {
   }
 
   /* Set up stack. */
-  if (!setup_stack(esp)) goto done;
+  if (!setup_stack(esp, file_name, args)) goto done;
 
   /* Start address. */
   *eip = (void (*)(void))ehdr.e_entry;
@@ -366,21 +384,80 @@ static bool load_segment(struct file *file, off_t ofs, uint8_t *upage, uint32_t 
   return true;
 }
 
+static void setup_args(void **esp, const char *file_name, char *args) {
+  ASSERT(esp != NULL);
+  ASSERT(file_name != NULL);  // 说明: 过了 fopen 这一关, 不可能为空
+  ASSERT(args != NULL);
+
+  uintptr_t addr = (uintptr_t)PHYS_BASE;
+
+  // move args to the stack
+  int len = strlen(file_name) + 1;  // because of the last '\0'
+  if (args[0] != '\0') {
+    len += strlen(args) + 1;
+  }
+  addr -= len;
+  int n = strlcpy((char *)addr, file_name, len);
+  if (args[0] != '\0') {
+    ((char *)addr)[n] = ' ';
+    ((char *)addr)[n + 1] = '\0';
+    strlcat((char *)addr, args, len);
+  }
+
+  args = (char *)addr;
+
+  // count the number of arguments, and divide the args with '\0'
+  int argc = 0;
+  for (char *str = strtok_r(args, " ", &args); str != NULL; str = strtok_r(NULL, " ", &args)) argc++;
+
+  args = (char *)addr;
+
+  addr = ((addr >> 2) << 2);  // align
+
+  addr -= sizeof(uintptr_t);
+  *(uintptr_t *)addr = (uintptr_t)NULL;
+
+  // set argv[0], argv[1], ...
+  addr -= sizeof(uintptr_t) * argc;
+  char **argv = (char **)addr;
+  for (int i = 0; i < argc; i++) {
+    argv[i] = args;
+    for (; *args; args++);
+    args++;  // skip '\0'
+  }
+  ASSERT(args == PHYS_BASE);
+
+  // set argv
+  addr -= sizeof(uintptr_t);
+  *(uintptr_t *)addr = (uintptr_t)argv;
+
+  // set argc
+  addr -= sizeof(int);
+  *(int *)addr = argc;
+
+  *esp = (void *)addr;
+}
+
 /** Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
-static bool setup_stack(void **esp) {
+static bool setup_stack(void **esp, const char *file_name, char *args) {
   uint8_t *kpage;
-  bool success = false;
 
-  kpage = palloc_get_page(PAL_USER | PAL_ZERO);
-  if (kpage != NULL) {
-    success = install_page(((uint8_t *)PHYS_BASE) - PGSIZE, kpage, true);
-    if (success)
-      *esp = PHYS_BASE;
-    else
-      palloc_free_page(kpage);
+  kpage = palloc_get_page(PAL_USER | PAL_ZERO);  // PPN
+  if (kpage == NULL) return false;
+  if (!install_page(((uint8_t *)PHYS_BASE) - PGSIZE, kpage, true)) {
+    palloc_free_page(kpage);
+    return false;
   }
-  return success;
+  setup_args(esp, file_name, args);
+
+  // for the return address
+  uintptr_t addr = (uintptr_t)*esp;
+  addr -= sizeof(uintptr_t);
+  *(uintptr_t *)addr = (uintptr_t)NULL;
+  *esp = (void *)addr;
+
+  return true;
 }
 
 /** Adds a mapping from user virtual address UPAGE to kernel
