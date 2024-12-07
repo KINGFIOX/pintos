@@ -60,6 +60,8 @@ static void start_process(void *file_name_) {
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load(file_name, &if_.eip, &if_.esp);
 
+  // hex_dump(0, if_.esp, PHYS_BASE - if_.esp, true);
+
   /* If load failed, quit. */
   palloc_free_page(file_name);  // argv[0] 对应的 page
   if (!success) thread_exit();

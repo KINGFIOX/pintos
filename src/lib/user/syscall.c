@@ -13,11 +13,18 @@
 
 /** Invokes syscall NUMBER, passing argument ARG0, and returns the
    return value as an `int'. */
-#define syscall1(NUMBER, ARG0)                                                                                                                    \
-  ({                                                                                                                                              \
-    int retval;                                                                                                                                   \
-    asm volatile("pushl %[arg0]; pushl %[number]; int $0x30; addl $8, %%esp" : "=a"(retval) : [number] "i"(NUMBER), [arg0] "g"(ARG0) : "memory"); \
-    retval;                                                                                                                                       \
+#define syscall1(NUMBER, ARG0)                   \
+  ({                                             \
+    int retval;                                  \
+    asm volatile(                                \
+        "pushl %[arg0];"                         \
+        "pushl %[number];"                       \
+        "int $0x30;"                             \
+        "addl $8, %%esp"                         \
+        : "=a"(retval)                           \
+        : [number] "i"(NUMBER), [arg0] "g"(ARG0) \
+        : "memory");                             \
+    retval;                                      \
   })
 
 /** Invokes syscall NUMBER, passing arguments ARG0 and ARG1, and
@@ -26,8 +33,11 @@
   ({                                                               \
     int retval;                                                    \
     asm volatile(                                                  \
-        "pushl %[arg1]; pushl %[arg0]; "                           \
-        "pushl %[number]; int $0x30; addl $12, %%esp"              \
+        "pushl %[arg1];"                                           \
+        "pushl %[arg0];"                                           \
+        "pushl %[number];"                                         \
+        "int $0x30;"                                               \
+        "addl $12, %%esp"                                          \
         : "=a"(retval)                                             \
         : [number] "i"(NUMBER), [arg0] "r"(ARG0), [arg1] "r"(ARG1) \
         : "memory");                                               \
@@ -40,8 +50,12 @@
   ({                                                                                 \
     int retval;                                                                      \
     asm volatile(                                                                    \
-        "pushl %[arg2]; pushl %[arg1]; pushl %[arg0]; "                              \
-        "pushl %[number]; int $0x30; addl $16, %%esp"                                \
+        "pushl %[arg2];"                                                             \
+        "pushl %[arg1];"                                                             \
+        "pushl %[arg0];"                                                             \
+        "pushl %[number];"                                                           \
+        "int $0x30;"                                                                 \
+        "addl $16, %%esp"                                                            \
         : "=a"(retval)                                                               \
         : [number] "i"(NUMBER), [arg0] "r"(ARG0), [arg1] "r"(ARG1), [arg2] "r"(ARG2) \
         : "memory");                                                                 \
