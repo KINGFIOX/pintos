@@ -131,7 +131,7 @@ void test_mlfqs_load_avg(void) {
   start_time = timer_ticks();
   msg("Starting %d load threads...", THREAD_CNT);
   for (i = 0; i < THREAD_CNT; i++) {
-    char name[16];
+    char name[32];
     snprintf(name, sizeof name, "load %d", i);
     thread_create(name, PRI_DEFAULT, load_thread, (void *)i);
   }

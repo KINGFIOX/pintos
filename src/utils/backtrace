@@ -1,6 +1,7 @@
-#! /usr/bin/perl -w
+#!/usr/bin/env perl
 
 use strict;
+use warnings;
 
 # Check command line.
 if (grep ($_ eq '-h' || $_ eq '--help', @ARGV)) {

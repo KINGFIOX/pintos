@@ -49,7 +49,7 @@ static void test_sleep(int thread_cnt, int iterations) {
   /* Start threads. */
   ASSERT(output != NULL);
   for (i = 0; i < thread_cnt; i++) {
-    char name[16];
+    char name[32];
     snprintf(name, sizeof name, "thread %d", i);
     thread_create(name, PRI_DEFAULT, sleeper, &test);
   }

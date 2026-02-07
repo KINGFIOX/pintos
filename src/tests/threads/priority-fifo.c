@@ -49,7 +49,7 @@ void test_priority_fifo(void) {
 
   thread_set_priority(PRI_DEFAULT + 2);
   for (i = 0; i < THREAD_CNT; i++) {
-    char name[16];
+    char name[32];
     struct simple_thread_data *d = data + i;
     snprintf(name, sizeof name, "%d", i);
     d->id = i;

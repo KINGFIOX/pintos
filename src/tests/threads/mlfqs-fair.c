@@ -65,7 +65,7 @@ static void test_mlfqs_fair(int thread_cnt, int nice_min, int nice_step) {
   nice = nice_min;
   for (i = 0; i < thread_cnt; i++) {
     struct thread_info *ti = &info[i];
-    char name[16];
+    char name[32];
 
     ti->start_time = start_time;
     ti->tick_count = 0;

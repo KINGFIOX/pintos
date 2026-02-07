@@ -57,7 +57,7 @@ void test_priority_donate_chain(void) {
   msg("%s got lock.", thread_name());
 
   for (i = 1; i < NESTING_DEPTH; i++) {
-    char name[16];
+    char name[32];
     int thread_priority;
 
     snprintf(name, sizeof name, "thread %d", i);

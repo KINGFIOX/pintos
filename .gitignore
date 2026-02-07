@@ -1,3 +1,82 @@
+# 白名单模式：先忽略所有，再允许特定文件
+
+# 忽略所有文件
+*
+
+# 但允许遍历目录
+!*/
+
+# ===== 允许的源代码文件 =====
+!*.c
+!*.h
+!*.S
+
+# ===== 允许的脚本和配置 =====
+!*.sh
+!*.pl
+!*.pm
+!*.py
+!Makefile
+!Makefile.*
+!Make.*
+!*.vars
+
+# ===== 允许的文档 =====
+!*.md
+!*.txt
+!*.texi
+!*.info
+
+# ===== 允许的测试相关文件 =====
+!*.ck
+!*.tests
+!*.sample
+!*.functionality
+!*.robustness
+!*.inc
+
+# ===== 允许的补丁文件 =====
+!*.patch
+
+# ===== 允许的配置文件 =====
+!.gitignore
+!.envrc
+!flake.nix
+!flake.lock
+!.gdbinit
+
+# ===== 允许的其他必要文件 =====
+!pintos
+!backtrace
+!pintos-*
+!squish-*
+!setitimer-helper*
+
+# ===== 显式忽略不需要的文件 =====
+# 编译产物目录
+build/
+
+# 编译产物文件
+*.o
+*.d
+*.bin
+*.dsk
+*.img
+*.out
+*.asm
+*.sym
+*.tmp
+
+# 编辑器和 IDE
+.vscode/
+.idea/
+.cache/
+*.swp
+*~
+
+# 调试历史
 .gdb_history
-.vscode
-.cache
+
+# Nix 构建产物
+result
+result-*
